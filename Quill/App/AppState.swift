@@ -7,6 +7,7 @@ import UniformTypeIdentifiers
 /// What's selected in the library sidebar.
 enum SidebarItem: Hashable {
     case overview
+    case history
     case snippet(Snippet.ID)
 
     var snippetID: Snippet.ID? {
@@ -22,6 +23,7 @@ final class AppState {
     static let shared = AppState()
 
     let store = SnippetStore()
+    let history = ExpansionHistory()
     private let engine = ExpansionEngine.shared
     @ObservationIgnored private let defaults = UserDefaults.standard
 
@@ -106,6 +108,13 @@ final class AppState {
         didSet { defaults.set(soundVolume, forKey: Keys.soundVolume) }
     }
 
+    var keepsHistory = true {
+        didSet {
+            defaults.set(keepsHistory, forKey: Keys.keepsHistory)
+            if !keepsHistory { history.clear() }
+        }
+    }
+
     var keepsDailyBackups = true {
         didSet { defaults.set(keepsDailyBackups, forKey: Keys.keepsDailyBackups) }
     }
@@ -138,6 +147,15 @@ final class AppState {
     var isShowingFileImporter = false
     var renamingGroupID: SnippetGroup.ID?
     var isShowingPalette = false
+    var isShowingPacks = false
+    /// What the icon picker sheet is choosing an icon for, when opened from a menu.
+    var iconPickerTarget: IconTarget?
+
+    enum IconTarget: Identifiable, Hashable {
+        case group(SnippetGroup.ID)
+        case snippet(Snippet.ID)
+        var id: Self { self }
+    }
     var deletingGroupID: SnippetGroup.ID?
 
     var selectedSnippetIDs: Set<Snippet.ID> {
@@ -158,6 +176,7 @@ final class AppState {
         static let soundName = "soundName"
         static let soundVolume = "soundVolume"
         static let keepsDailyBackups = "keepsDailyBackups"
+        static let keepsHistory = "keepsHistory"
         static let sortOrder = "sortOrder"
         static let isPaused = "isPaused"
         static let pausedUntil = "pausedUntil"
@@ -204,6 +223,7 @@ final class AppState {
             soundVolume = defaults.double(forKey: Keys.soundVolume)
         }
         keepsDailyBackups = defaults.object(forKey: Keys.keepsDailyBackups) as? Bool ?? true
+        keepsHistory = defaults.object(forKey: Keys.keepsHistory) as? Bool ?? true
         sortOrder = defaults.string(forKey: Keys.sortOrder).flatMap(SnippetSortOrder.init) ?? .shortcut
         isPaused = defaults.bool(forKey: Keys.isPaused)
         pausedUntil = defaults.object(forKey: Keys.pausedUntil) as? Date
@@ -223,7 +243,10 @@ final class AppState {
         engine.partialSuggestionsEnabled = showsPartialSuggestions
         engine.styleResolver = { [unowned self] snippet in snippet.animation ?? self.defaultAnimation }
         engine.onExpanded = { [unowned self] expansion in self.didExpand(expansion) }
-        engine.onUndone = { [unowned self] id in self.store.undoUse(id) }
+        engine.onUndone = { [unowned self] id in
+            self.store.undoUse(id)
+            self.history.removeLatest(for: id)
+        }
         engine.onNeedsInput = { snippet, fields, completion in
             FillInController.shared.present(snippet: snippet, fields: fields, completion: completion)
         }
@@ -372,6 +395,10 @@ final class AppState {
 
     private func didExpand(_ expansion: ExpansionEngine.Expansion) {
         store.recordUse(expansion.snippet.id)
+        if keepsHistory {
+            history.record(expansion.snippet, text: expansion.renderedText,
+                           appName: lastExternalApp?.localizedName, bundleID: lastExternalApp?.bundleIdentifier)
+        }
         playSound()
         OverlayPresenter.shared.play(expansion.style, trigger: expansion.snippet.trigger, text: expansion.renderedText)
     }

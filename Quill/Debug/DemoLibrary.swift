@@ -4,7 +4,17 @@ import Foundation
 /// Made-up snippets for screenshots (run with -QuillDemoData). Never saved.
 @MainActor
 enum DemoLibrary {
+    /// Built once, so History entries point at the same snippets the library shows.
+    private static var cached: QuillLibrary?
+
     static func make() -> QuillLibrary {
+        if let cached { return cached }
+        let library = build()
+        cached = library
+        return library
+    }
+
+    private static func build() -> QuillLibrary {
         var personal = SnippetGroup(name: "Personal", color: .blue, symbol: "person.fill")
         var shop = SnippetGroup(name: "Shop", color: .orange, symbol: "bag.fill")
         var code = SnippetGroup(name: "Code", color: .purple, symbol: "chevron.left.forwardslash.chevron.right")
@@ -44,6 +54,21 @@ enum DemoLibrary {
             daily[SnippetStore.dayKey(for: date)] = uses
         }
         return QuillLibrary(snippets: snippets, groups: [personal, shop, code], dailyUses: daily)
+    }
+
+    static func history() -> [HistoryEntry] {
+        let library = make()
+        let apps: [(String, String)] = [("Mail", "com.apple.mail"), ("Safari", "com.apple.Safari"), ("Notes", "com.apple.Notes"),
+                                        ("Messages", "com.apple.MobileSMS"), ("Xcode", "com.apple.dt.Xcode")]
+        let picks = ["eml", "sig", "thx", "addr", "clog", "omw", ";date", "eml", "sigw", "ret", "eml", "sig"]
+        return picks.enumerated().compactMap { index, trigger in
+            guard let snippet = library.snippets.first(where: { $0.trigger == trigger }) else { return nil }
+            let app = apps[index % apps.count]
+            var text = TokenRenderer.render(snippet.expansion, inputs: ["Name": "Sam", "Order": "#1042"], clipboard: "").text
+            text = text.replacingOccurrences(of: "\n", with: " ")
+            return HistoryEntry(date: Date().addingTimeInterval(-Double(index) * 2_700 - 120), snippetID: snippet.id,
+                                trigger: trigger, text: text, appName: app.0, bundleID: app.1)
+        }
     }
 }
 #endif

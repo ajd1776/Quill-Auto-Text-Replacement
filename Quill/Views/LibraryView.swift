@@ -7,6 +7,7 @@ struct LibraryView: View {
     @Environment(AppState.self) private var state
     @Environment(\.undoManager) private var undoManager
     @State private var searchText = ""
+    @AppStorage("ungroupedExpanded") private var ungroupedExpanded = true
     @State private var groupName = ""
 
     private var store: SnippetStore { state.store }
@@ -34,8 +35,15 @@ struct LibraryView: View {
             detail
         }
         // Without a minimum, macOS can restore the window at a uselessly small size.
-        .frame(minWidth: 760, minHeight: 460)
+        .frame(minWidth: 900, minHeight: 600)
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
+        .sheet(isPresented: $state.isShowingPacks) {
+            PackGallery()
+                .environment(state)
+        }
+        .sheet(item: $state.iconPickerTarget) { target in
+            iconPickerSheet(for: target)
+        }
         .sheet(isPresented: $state.isShowingPalette) {
             CommandPalette()
                 .environment(state)
@@ -116,19 +124,26 @@ struct LibraryView: View {
             }
 
             if !isSearching {
-                HStack(spacing: 10) {
-                    SnippetIcon(symbol: "chart.bar.xaxis", color: .purple, size: 26)
-                    Text("Overview").font(.body.weight(.medium))
-                }
-                .tag(SidebarItem.overview)
+                SidebarLink(title: "Overview", symbol: "chart.bar.xaxis", color: .purple)
+                    .tag(SidebarItem.overview)
+                SidebarLink(title: "History", symbol: "clock.arrow.circlepath", color: .teal,
+                            badge: state.history.entries.isEmpty ? nil : "\(state.history.entries.count)")
+                    .tag(SidebarItem.history)
             }
 
+            // Collapsing is done with our own larger arrow, so sections are plain and rows are skipped when collapsed.
             if !loose.isEmpty || store.groups.isEmpty {
                 Section {
-                    rows(for: loose)
+                    if ungroupedExpanded || isSearching { rows(for: loose) }
                 } header: {
                     DropHeader(groupID: nil) {
-                        Text(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                        HStack(spacing: 8) {
+                            DisclosureArrow(isExpanded: $ungroupedExpanded)
+                            Text(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                                .font(.subheadline.weight(.semibold))
+                            CountBadge(count: store.snippets(in: nil).count, color: .secondary)
+                            Spacer()
+                        }
                     }
                 }
             }
@@ -136,8 +151,8 @@ struct LibraryView: View {
             ForEach(store.groups) { group in
                 let snippets = visible(store.snippets(in: group.id))
                 if !isSearching || !snippets.isEmpty {
-                    Section(isExpanded: isSearching ? .constant(true) : store.groupExpandedBinding(for: group.id)) {
-                        rows(for: snippets)
+                    Section {
+                        if group.isExpanded || isSearching { rows(for: snippets) }
                     } header: {
                         DropHeader(groupID: group.id) {
                             GroupHeader(group: group, count: store.snippets(in: group.id).count)
@@ -179,6 +194,10 @@ struct LibraryView: View {
                     }
                     Button("New Group", systemImage: "folder.badge.plus") {
                         state.newGroup()
+                    }
+                    Divider()
+                    Button("Add Starter Pack…", systemImage: "shippingbox") {
+                        state.isShowingPacks = true
                     }
                 } label: {
                     Label("New Snippet", systemImage: "square.and.pencil")
@@ -232,8 +251,27 @@ struct LibraryView: View {
                     delete(ids)
                 }
             }
+        } else if state.selection == [.history] {
+            HistoryView()
         } else {
             OverviewView()
+        }
+    }
+
+    @ViewBuilder
+    private func iconPickerSheet(for target: AppState.IconTarget) -> some View {
+        switch target {
+        case .group(let id):
+            let group = store.group(id)
+            IconPicker(current: group?.symbol, tint: group?.color.color ?? .accentColor) { icon in
+                if let icon { store.updateGroup(id) { $0.symbol = icon } }
+            }
+        case .snippet(let id):
+            let snippet = store.snippet(id)
+            let group = snippet.flatMap(store.group(for:))
+            IconPicker(current: snippet?.symbol, tint: group?.color.color ?? .accentColor, defaultTitle: "Use Group Icon") { icon in
+                store.update(id) { $0.symbol = icon }
+            }
         }
     }
 
@@ -258,36 +296,119 @@ private struct GroupHeader: View {
     let group: SnippetGroup
     let count: Int
     @Environment(AppState.self) private var state
+    @State private var isPickingIcon = false
 
     var body: some View {
-        HStack(spacing: 7) {
-            Image(systemName: group.symbol)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 18, height: 18)
-                .background(group.color.color.gradient, in: Circle())
-                .accessibilityHidden(true)
+        HStack(spacing: 8) {
+            DisclosureArrow(isExpanded: state.store.groupExpandedBinding(for: group.id))
+
+            Button {
+                isPickingIcon = true
+            } label: {
+                SnippetIcon(symbol: group.symbol, color: group.color.color, size: 24)
+            }
+            .buttonStyle(.plain)
+            .help("Change Icon")
+            .popover(isPresented: $isPickingIcon, arrowEdge: .bottom) {
+                IconPicker(current: group.symbol, tint: group.color.color) { icon in
+                    if let icon { state.store.updateGroup(group.id) { $0.symbol = icon } }
+                }
+            }
+
             Text(group.name)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
-            Text("\(count)")
-                .font(.caption.weight(.semibold))
-                .monospacedDigit()
-                .foregroundStyle(group.color.color)
-                .padding(.horizontal, 6)
-                .padding(.vertical, 1)
-                .background(group.color.color.opacity(0.16), in: Capsule())
-            Spacer()
+                .lineLimit(1)
+            CountBadge(count: count, color: group.color.color)
+            Spacer(minLength: 4)
+
+            Menu {
+                GroupActionsMenu(group: group)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Group Options")
+            .accessibilityLabel("Options for \(group.name)")
+
             Toggle("Turn \(group.name) on or off", isOn: state.store.groupEnabledBinding(for: group.id))
                 .toggleStyle(.switch)
                 .controlSize(.mini)
                 .labelsHidden()
                 .help(group.isEnabled ? "Turn Group Off" : "Turn Group On")
         }
+        .padding(.vertical, 3)
+        // Line the switch up with the snippet rows' switches.
+        .padding(.trailing, 12)
         .opacity(group.isEnabled ? 1 : 0.55)
         .contentShape(Rectangle())
         .contextMenu {
             GroupActionsMenu(group: group)
+        }
+    }
+}
+
+/// A large, easy-to-hit arrow that collapses and expands a sidebar section.
+private struct DisclosureArrow: View {
+    @Binding var isExpanded: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        Button {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { isExpanded.toggle() }
+        } label: {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isExpanded ? "Collapse" : "Expand")
+        .accessibilityLabel(isExpanded ? "Collapse group" : "Expand group")
+    }
+}
+
+private struct CountBadge: View {
+    let count: Int
+    let color: Color
+
+    var body: some View {
+        Text("\(count)")
+            .font(.caption.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.16), in: Capsule())
+    }
+}
+
+/// Overview and History rows at the top of the sidebar.
+private struct SidebarLink: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    var badge: String?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            SnippetIcon(symbol: symbol, color: color, size: 26)
+            Text(title).font(.body.weight(.medium))
+            Spacer()
+            if let badge {
+                Text(badge)
+                    .font(.caption)
+                    .monospacedDigit()
+                    .foregroundStyle(.secondary)
+            }
         }
     }
 }
@@ -358,9 +479,16 @@ struct SnippetIcon: View {
 
     var body: some View {
         let fill = color ?? .accentColor
-        Image(systemName: symbol ?? "text.quote")
-            .font(.system(size: size * 0.46, weight: .semibold))
-            .foregroundStyle(.white)
+        Group {
+            if let symbol, IconKind.isEmoji(symbol) {
+                Text(symbol)
+                    .font(.system(size: size * 0.58))
+            } else {
+                Image(systemName: symbol ?? "text.quote")
+                    .font(.system(size: size * 0.46, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+        }
             .frame(width: size, height: size)
             .background {
                 RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)

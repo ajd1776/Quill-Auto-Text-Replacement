@@ -31,6 +31,8 @@ struct CommandPalette: View {
                 NSApp.hide(nil)
                 SearchPanelController.shared.show()
             },
+            Item(id: "packs", title: "Add Starter Pack…", subtitle: "Emoji, typos, dates", symbol: "shippingbox", color: .orange) { state.isShowingPacks = true },
+            Item(id: "history", title: "Show History", subtitle: "Recent expansions", symbol: "clock.arrow.circlepath", color: .teal) { state.selection = [.history] },
             Item(id: "importMac", title: "Import Text Replacements from macOS", subtitle: "File menu", symbol: "square.and.arrow.down", color: .gray) { state.beginSystemImport() },
             Item(id: "import", title: "Import Snippets…", subtitle: "⇧⌘I", symbol: "tray.and.arrow.down", color: .gray) { state.isShowingFileImporter = true },
             Item(id: "export", title: "Export Snippets…", subtitle: "⇧⌘E", symbol: "tray.and.arrow.up", color: .gray) { state.exportLibrary() },

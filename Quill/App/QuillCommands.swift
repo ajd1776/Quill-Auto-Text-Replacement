@@ -46,6 +46,11 @@ struct QuillCommands: Commands {
             }
             .keyboardShortcut("i", modifiers: [.command, .shift])
 
+            Button("Add Starter Pack…") {
+                showLibrary()
+                state.isShowingPacks = true
+            }
+
             Button("Export Snippets…") {
                 state.exportLibrary()
             }

@@ -8,9 +8,19 @@ struct SnippetGroup: Identifiable, Codable, Hashable {
     var symbol: String = "folder.fill"
     var isEnabled = true
     var isExpanded = true
+    /// Set for groups added from a built-in pack, so the pack can be recognised and removed.
+    var packID: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, color, symbol, isEnabled, isExpanded
+        case id, name, color, symbol, isEnabled, isExpanded, packID
+    }
+}
+
+/// An icon is either an SF Symbol name or a single emoji.
+enum IconKind {
+    static func isEmoji(_ icon: String) -> Bool {
+        guard icon.count == 1, let scalar = icon.unicodeScalars.first else { return false }
+        return scalar.properties.isEmoji && (scalar.value > 0x238C || icon.unicodeScalars.count > 1)
     }
 }
 
@@ -23,6 +33,7 @@ extension SnippetGroup {
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol) ?? "folder.fill"
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         isExpanded = try container.decodeIfPresent(Bool.self, forKey: .isExpanded) ?? true
+        packID = try container.decodeIfPresent(String.self, forKey: .packID)
     }
 }
 

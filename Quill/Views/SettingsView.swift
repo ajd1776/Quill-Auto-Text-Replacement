@@ -110,6 +110,10 @@ private struct GeneralSettingsPane: View {
                         }
                     }
                 }
+                Toggle("Keep expansion history", isOn: Binding(
+                    get: { state.keepsHistory },
+                    set: { state.keepsHistory = $0 }
+                ))
             } header: {
                 Text("Privacy")
             } footer: {

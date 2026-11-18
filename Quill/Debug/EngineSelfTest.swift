@@ -106,6 +106,8 @@ enum EngineSelfTest {
             Case(name: "fill-in field uses the typed value", keys: "hin ", expected: "Hi AJ, order 42!"),
             Case(name: "cancelling a fill-in puts the shortcut back", keys: "hin ", expected: "hin", cancelsFillIn: true),
             Case(name: "fill-in via Tab from a partial match", keys: "hi⇥", expected: "Hi AJ, order 42!"),
+            Case(name: "emoji shortcode expands on the closing colon", keys: "nice :fire:", expected: "nice 🔥"),
+            Case(name: "typo fix matches any capitals", keys: "Teh cat", expected: "The cat"),
         ]
 
         let engine = ExpansionEngine.shared
@@ -130,6 +132,8 @@ enum EngineSelfTest {
             { var s = snippet("omw", "on my way"); s.matchesAnyCase = true; return s }(),
             { var s = snippet("shp", "Thanks for your order!"); s.appBundleIDs = ["com.apple.mail"]; return s }(),
             snippet("hin", "Hi {input:Name}, order {input:Order}!"),
+            snippet(":fire:", "🔥", mode: .immediate),
+            { var s = snippet("teh", "the"); s.matchesAnyCase = true; return s }(),
         ])
 
         var failures = 0
@@ -175,7 +179,7 @@ enum EngineSelfTest {
         return failures == 0 && modelFailures == 0
     }
 
-    private static let modelChecks = 10
+    private static let modelChecks = 14
 
     /// Data checks on in-memory values only; never touches the real snippets file.
     private static func runModelChecks() -> Int {
@@ -218,6 +222,12 @@ enum EngineSelfTest {
               TokenRenderer.inputFields(in: "{input:Name} {input:Order} {input:Name}") == ["Name", "Order"])
         check("fill-in values render", TokenRenderer.render("Hi {input:Name}!", inputs: ["Name": "AJ"]).text == "Hi AJ!")
         check("case adapter leaves exact typing alone", CaseAdapter.adapt("on my way", typed: "omw", trigger: "omw") == "on my way")
+
+        let year = String(Calendar.current.component(.year, from: Date()))
+        check("{date:yyyy} formats", TokenRenderer.render("© {date:yyyy}").text == "© \(year)")
+        check("emoji icons are recognised", IconKind.isEmoji("😄") && IconKind.isEmoji("❤️") && IconKind.isEmoji("🇬🇧"))
+        check("symbol names aren't emoji", !IconKind.isEmoji("folder.fill") && !IconKind.isEmoji("a") && !IconKind.isEmoji("1"))
+        check("starter packs have unique shortcuts", StarterPack.all.allSatisfy { Set($0.entries.map(\.trigger)).count == $0.entries.count })
 
         let sorted = [Snippet(trigger: "b", expansion: "1"), Snippet(trigger: "", expansion: "2"), Snippet(trigger: "a", expansion: "3")]
             .sorted(by: SnippetSortOrder.shortcut.areInIncreasingOrder)

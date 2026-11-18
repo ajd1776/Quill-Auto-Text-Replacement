@@ -12,7 +12,7 @@ struct QuillApp: App {
             LibraryView()
                 .environment(state)
         }
-        .defaultSize(width: 900, height: 560)
+        .defaultSize(width: 1100, height: 720)
         .defaultLaunchBehavior(hasCompletedWelcome && showsMenuBarExtra ? .suppressed : .presented)
         .commands {
             QuillCommands(state: state)
@@ -88,6 +88,17 @@ private struct MenuBarLabel: View {
             case "general", "suggestions", "effects", "shortcuts", "backup":
                 UserDefaults.standard.set(demo, forKey: "settingsPane")
                 openSettings()
+            case "history":
+                state.selection = [.history]
+                openWindow(id: WindowID.library)
+            case "packs":
+                openWindow(id: WindowID.library)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.isShowingPacks = true }
+            case "iconpicker":
+                openWindow(id: WindowID.library)
+                if let group = state.store.groups.first {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.iconPickerTarget = .group(group.id) }
+                }
             case "palette":
                 openWindow(id: WindowID.library)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.isShowingPalette = true }

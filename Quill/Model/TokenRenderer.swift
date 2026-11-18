@@ -42,7 +42,9 @@ struct RenderedText: Equatable {
 
 enum TokenRenderer {
     /// Every token Quill understands, for highlighting: {date}, {time}, {clipboard}, {cursor} and {input:Label}.
-    static let tokenPattern = try! NSRegularExpression(pattern: #"\{(?:date|time|clipboard|cursor|input:[^{}\n]+)\}"#)
+    static let tokenPattern = try! NSRegularExpression(pattern: #"\{(?:date|time|clipboard|cursor|input:[^{}\n]+|date:[^{}\n]+)\}"#)
+    /// {date:FORMAT} with a Unicode date pattern, such as {date:dd/MM/yyyy} or {date:EEEE}.
+    private static let datePattern = try! NSRegularExpression(pattern: #"\{date:([^{}\n]+)\}"#)
     private static let inputPattern = try! NSRegularExpression(pattern: #"\{input:([^{}\n]+)\}"#)
 
     static func containsTokens(_ template: String) -> Bool {
@@ -82,6 +84,21 @@ enum TokenRenderer {
                 result += text[last..<whole.lowerBound]
                 // Without a value (previews, menus) the label stands in, so the text still reads.
                 result += inputs[label] ?? label
+                last = whole.upperBound
+            }
+            result += text[last...]
+            text = result
+        }
+        if text.contains("{date:") {
+            let range = NSRange(text.startIndex..., in: text)
+            var result = ""
+            var last = text.startIndex
+            for match in datePattern.matches(in: text, range: range) {
+                guard let whole = Range(match.range, in: text), let formatRange = Range(match.range(at: 1), in: text) else { continue }
+                let formatter = DateFormatter()
+                formatter.locale = .current
+                formatter.dateFormat = String(text[formatRange])
+                result += text[last..<whole.lowerBound] + formatter.string(from: now)
                 last = whole.upperBound
             }
             result += text[last...]

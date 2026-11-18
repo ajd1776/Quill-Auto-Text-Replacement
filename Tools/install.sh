@@ -13,6 +13,9 @@ pkill -x Quill 2>/dev/null || true
 sleep 1
 rm -rf /Applications/Quill.app
 cp -R build.noindex/Build/Products/Release/Quill.app /Applications/
+# Keep only the /Applications copy registered, so duplicates don't appear in Open With or Accessibility.
+/System/Library/Frameworks/CoreServices.framework/Frameworks/LaunchServices.framework/Support/lsregister \
+  -u build.noindex/Build/Products/Release/Quill.app 2>/dev/null || true
 codesign -dv /Applications/Quill.app 2>&1 | grep -E "Authority=Apple Development|TeamIdentifier" || true
 open /Applications/Quill.app
 echo "Done. Quill is running from /Applications."

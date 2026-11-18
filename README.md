@@ -1,3 +1,5 @@
+<img src="Quill/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="128" alt="Quill icon">
+
 # Quill – Auto Text Replacement
 
 System-wide text expander for macOS. Type a shortcut, get the full text. Native SwiftUI menu bar app, no dependencies.
@@ -8,10 +10,13 @@ System-wide text expander for macOS. Type a shortcut, get the full text. Native 
 
 - **Expansion**: case-sensitive, whole-word shortcuts. Fires after space/punctuation/Return, or immediately. Delete right after undoes.
 - **Suggestion bubble**: shown at the cursor while typing, like the macOS replacement bubble. Space accepts an exact match, Tab accepts the highlighted one, ↑↓ select, Esc dismisses. Partial matches after 2 characters.
-- **Tokens**: `{date}`, `{time}`, `{clipboard}`, `{cursor}`, `{input:Label}`. Fill-in fields open a form before inserting.
+- **Tokens**: `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}`, `{cursor}`, `{input:Label}`. Fill-in fields open a form before inserting.
 - **Per-snippet options**: groups, icon, expansion mode, animation, app allow-list, case matching (`EAD` → ALL CAPS, `Ead` → Capitalised).
 - **13 effects**: Typewriter, Pop Badge, Glow, Ink Underline, Fade/Slide/Bounce In, Sparkle, Confetti, Ripple, Particle Cloud, Cyber. Rendered as click-through overlays. Respects Reduce Motion (overridable).
 - **Controls**: per-snippet and per-group switches, global on/off hotkey, timed pause, pause per app, snippet search panel (hotkey), ⌘K command palette, drag and drop between groups.
+- **Starter packs**: Emoji Shortcodes (`:fire:` → 🔥), Typo Fixes (`teh` → `the`), Dates and Times (`;dmy` → `18/11/2026`). Each installs as a removable group.
+- **History**: recent expansions with snippet, app and time. Local only, can be turned off.
+- **Icons**: any SF Symbol or emoji for groups and snippets.
 - **Shortcuts app**: Turn Quill On/Off, Get Snippet Text, Insert Snippet, Add Snippet.
 - **Data**: local JSON, daily backups (last 7), JSON export/import, import from macOS Text Replacements. Usage stats per snippet and per day.
 
@@ -21,9 +26,17 @@ System-wide text expander for macOS. Type a shortcut, get the full text. Native 
 | --- | --- |
 | ![Editor](docs/screenshots/editor.png) | ![Command palette](docs/screenshots/palette.png) |
 
-| Suggestion bubble | Fill-in form |
+| History | Starter packs |
 | --- | --- |
-| ![Suggestion bubble](docs/screenshots/bubble.png) | ![Fill-in form](docs/screenshots/fill-in.png) |
+| ![History](docs/screenshots/history.png) | ![Starter packs](docs/screenshots/packs.png) |
+
+| Icon picker | Suggestion bubble |
+| --- | --- |
+| ![Icon picker](docs/screenshots/icon-picker.png) | ![Suggestion bubble](docs/screenshots/bubble.png) |
+
+| Fill-in form |
+| --- |
+| ![Fill-in form](docs/screenshots/fill-in.png) |
 
 | Pop Badge | Cyber |
 | --- | --- |
@@ -35,7 +48,7 @@ System-wide text expander for macOS. Type a shortcut, get the full text. Native 
 
 ## Download
 
-Get `Quill-1.0.dmg` from [Releases](../../releases/latest), open it and drag Quill to Applications.
+Get `Quill-1.1.dmg` from [Releases](../../releases/latest), open it and drag Quill to Applications.
 
 First launch: Quill isn't notarized, so macOS blocks it once. Open System Settings › Privacy & Security, click **Open Anyway**, then grant Accessibility access when asked. Universal build (Apple Silicon and Intel), macOS 15+.
 

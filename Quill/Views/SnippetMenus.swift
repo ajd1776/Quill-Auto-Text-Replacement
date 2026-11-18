@@ -69,16 +69,10 @@ struct SnippetActionsMenu: View {
             .labelsHidden()
         }
 
-        Menu("Icon", systemImage: "face.smiling") {
-            Picker("Icon", selection: binding(\.symbol, fallback: nil)) {
-                Text("Group Icon").tag(String?.none)
-                Divider()
-                ForEach(SnippetSymbols.all, id: \.name) { symbol in
-                    Label(symbol.title, systemImage: symbol.name).tag(Optional(symbol.name))
-                }
+        if ids.count == 1, let id = ids.first {
+            Button("Choose Icon…", systemImage: "face.smiling") {
+                state.iconPickerTarget = .snippet(id)
             }
-            .pickerStyle(.inline)
-            .labelsHidden()
         }
 
         Divider()
@@ -142,17 +136,8 @@ struct GroupActionsMenu: View {
             .labelsHidden()
         }
 
-        Menu("Icon", systemImage: "face.smiling") {
-            Picker("Icon", selection: Binding(
-                get: { group.symbol },
-                set: { value in store.updateGroup(group.id) { $0.symbol = value } }
-            )) {
-                ForEach(SnippetSymbols.all, id: \.name) { symbol in
-                    Label(symbol.title, systemImage: symbol.name).tag(symbol.name)
-                }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
+        Button("Choose Icon…", systemImage: "face.smiling") {
+            state.iconPickerTarget = .group(group.id)
         }
 
         Divider()
