@@ -65,6 +65,13 @@ final class SuggestionBubbleController {
         model.highlighted = 0
         show(at: CaretLocator.pointerRect())
     }
+
+    /// For the scripted demo: the bubble at a given cursor, with a given row highlighted.
+    func showDemo(_ items: [ExpansionEngine.Suggestion], highlighted: Int, at caret: CGRect) {
+        model.items = items
+        model.highlighted = highlighted
+        show(at: caret)
+    }
     #endif
 
     private func scheduleIdleHide() {

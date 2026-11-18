@@ -34,6 +34,13 @@ final class FillInController: NSObject, NSWindowDelegate {
     #if DEBUG
     /// Screenshot demos show the form without taking keyboard focus.
     static var demoWithoutFocus = false
+    /// The scripted demo places the form at its own cursor and fills it in itself.
+    static var demoCaret: CGRect?
+    private(set) var demoModel: FillInModel?
+
+    func demoSubmit() {
+        finish(with: demoModel?.values)
+    }
     #endif
     private let width: CGFloat = 400
 
@@ -42,6 +49,9 @@ final class FillInController: NSObject, NSWindowDelegate {
         self.completion = completion
 
         let model = FillInModel(snippet: snippet, fields: fields, group: AppState.shared.store.group(for: snippet))
+        #if DEBUG
+        demoModel = model
+        #endif
         let view = FillInView(
             model: model,
             onInsert: { [weak self] in self?.finish(with: model.values) },
@@ -76,7 +86,10 @@ final class FillInController: NSObject, NSWindowDelegate {
 
     /// Below the cursor when there's room, otherwise near the top of the screen.
     private func frame(for size: CGSize, near caret: CGRect?) -> CGRect {
-        let anchor = caret ?? CaretLocator.pointerRect()
+        var anchor = caret ?? CaretLocator.pointerRect()
+        #if DEBUG
+        if let demo = Self.demoCaret { anchor = demo }
+        #endif
         let screen = NSScreen.screens.first { $0.frame.intersects(anchor) }?.visibleFrame
             ?? NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 1440, height: 900)
         var y = anchor.minY - size.height - 8

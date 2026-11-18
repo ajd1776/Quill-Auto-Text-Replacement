@@ -17,6 +17,11 @@ struct MenuBarPanel: View {
         case all, on, off, group(SnippetGroup.ID)
     }
 
+    private struct ListKey: Hashable {
+        let query: String
+        let filter: Filter
+    }
+
     private var snippets: [Snippet] {
         let text = query.trimmingCharacters(in: .whitespaces)
         return store.snippets
@@ -72,7 +77,7 @@ struct MenuBarPanel: View {
                 } description: {
                     Text(store.snippets.isEmpty ? "Make one in the library." : "Try another search or filter.")
                 }
-                .frame(height: 220)
+                .frame(height: 330)
             } else {
                 ScrollView {
                     LazyVStack(spacing: 2) {
@@ -84,8 +89,10 @@ struct MenuBarPanel: View {
                     }
                     .padding(6)
                 }
-                .defaultScrollAnchor(.top)
-                .frame(height: min(CGFloat(snippets.count) * 46 + 12, 330))
+                // A fresh list for each search or filter: no cross-fading rows, and it starts at the top.
+                .id(ListKey(query: query, filter: filter))
+                .transaction { $0.animation = nil }
+                .frame(height: 330)
             }
 
             Divider()
@@ -103,6 +110,22 @@ struct MenuBarPanel: View {
             state.setSearchPanelOpen(false)
             query = ""
         }
+        #if DEBUG
+        // The scripted demo types into the search field and taps the filters.
+        .onReceive(NotificationCenter.default.publisher(for: .quillDemoPanel)) { note in
+            withAnimation(.snappy) {
+                if let text = note.userInfo?["query"] as? String { query = text }
+                switch note.userInfo?["filter"] as? String {
+                case "all": filter = .all
+                case "on": filter = .on
+                case "off": filter = .off
+                case let name?:
+                    if let group = store.groups.first(where: { $0.name == name }) { filter = .group(group.id) }
+                case nil: break
+                }
+            }
+        }
+        #endif
     }
 
     // MARK: Header

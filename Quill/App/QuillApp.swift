@@ -77,6 +77,7 @@ private struct MenuBarLabel: View {
         if arguments.contains("-QuillLight") { NSApp.appearance = NSAppearance(named: .aqua) }
         // Screenshots use the default window size, whatever size the window was last left at.
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            guard !demo.hasPrefix("stage:") else { return }
             for window in NSApp.windows where window.identifier?.rawValue.contains(WindowID.library) == true {
                 window.setFrame(NSRect(x: 160, y: 120, width: 1320, height: 820), display: true)
             }
@@ -144,6 +145,8 @@ private struct MenuBarLabel: View {
                 SuggestionBubbleController.shared.showDemo(Array(items))
             case "hud":
                 OverlayPresenter.shared.showToggleHUD(isOn: true)
+            case let scene where scene.hasPrefix("stage:"):
+                DemoStage.shared.run(String(scene.dropFirst(6))) { openWindow(id: WindowID.library) }
             default:
                 // -QuillDemo <style>, such as cyber or confetti, plays that effect under the pointer.
                 if let style = ReplacementAnimation(rawValue: demo) {
