@@ -49,7 +49,7 @@ System-wide text expander for macOS. Type a shortcut, get the full text. Native 
 
 ## Download
 
-Get `Quill-1.1.dmg` from [Releases](../../releases/latest), open it and drag Quill to Applications.
+Get `Quill-1.2.dmg` from [Releases](../../releases/latest), open it and drag Quill to Applications.
 
 First launch: Quill isn't notarized, so macOS blocks it once. Open System Settings › Privacy & Security, click **Open Anyway**, then grant Accessibility access when asked. Universal build (Apple Silicon and Intel), macOS 15+.
 
