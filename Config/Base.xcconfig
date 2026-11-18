@@ -1,0 +1,7 @@
+// Shared build settings for the Quill target.
+// Signing: create Config/Signing.xcconfig (git-ignored) containing your Apple Team ID:
+//   DEVELOPMENT_TEAM = ABCDE12345
+#include? "Signing.xcconfig"
+
+// Don't embed absolute source paths (they include the builder's home folder) in the binary.
+OTHER_SWIFT_FLAGS = $(inherited) -file-prefix-map $(SRCROOT)=. -file-prefix-map $(BUILD_DIR)=build
