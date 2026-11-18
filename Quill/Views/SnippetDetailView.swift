@@ -16,7 +16,7 @@ struct SnippetDetailView: View {
     private let editorFontSize: CGFloat = 15
 
     private var group: SnippetGroup? { state.store.group(for: snippet) }
-    private var tint: Color { group?.color.color ?? .accentColor }
+    private var tint: Color { group?.tint ?? .accentColor }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

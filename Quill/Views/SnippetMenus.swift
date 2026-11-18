@@ -118,22 +118,8 @@ struct GroupActionsMenu: View {
 
         Divider()
 
-        Menu("Colour", systemImage: "paintpalette") {
-            Picker("Colour", selection: Binding(
-                get: { group.color },
-                set: { value in store.updateGroup(group.id) { $0.color = value } }
-            )) {
-                ForEach(GroupColor.allCases) { color in
-                    Label {
-                        Text(color.title)
-                    } icon: {
-                        Image(systemName: "circle.fill").foregroundStyle(color.color)
-                    }
-                    .tag(color)
-                }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
+        Button("Colour…", systemImage: "paintpalette") {
+            state.colorPickerGroupID = group.id
         }
 
         Button("Choose Icon…", systemImage: "face.smiling") {

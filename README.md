@@ -1,116 +1,194 @@
-<img src="Quill/Assets.xcassets/AppIcon.appiconset/icon_128x128@2x.png" width="128" alt="Quill icon">
+<div align="center">
+  <img src="Quill/Assets.xcassets/AppIcon.appiconset/icon_256x256.png" width="200" height="200" alt="Quill app icon: a purple pen nib with a glowing enchantment">
+  <h1>Quill</h1>
+  <p><b>Type a short shortcut anywhere on your Mac and get the full text.</b></p>
 
-# Quill – Auto Text Replacement
+[![Download](https://img.shields.io/github/v/release/ajd1776/Quill-Auto-Text-Replacement?style=flat-square&label=download)](https://github.com/ajd1776/Quill-Auto-Text-Replacement/releases/latest)
+![Platform](https://img.shields.io/badge/platform-macOS-blue?style=flat-square)
+![Requires](https://img.shields.io/badge/requires-macOS_15%2B-orange?style=flat-square)
 
-System-wide text expander for macOS. Type a shortcut, get the full text. Native SwiftUI menu bar app, no dependencies.
+</div>
 
-![Overview](docs/screenshots/overview.png)
+<p align="center">
+  <img src="docs/screenshots/snippets.png" width="820" alt="Quill's Snippets page: groups in the sidebar, a list of snippets with switches, and the editor for the thx snippet open on the right">
+</p>
 
-## Features
-
-- **Expansion**: case-sensitive, whole-word shortcuts. Fires after space/punctuation/Return, or immediately. Delete right after undoes.
-- **Suggestion bubble**: shown at the cursor while typing, like the macOS replacement bubble. Space accepts an exact match, Tab accepts the highlighted one, ↑↓ select, Esc dismisses. Partial matches after 2 characters.
-- **Tokens**: `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}`, `{cursor}`, `{input:Label}`. Fill-in fields open a form before inserting.
-- **Per-snippet options**: groups, icon, expansion mode, animation, app allow-list, case matching (`EAD` → ALL CAPS, `Ead` → Capitalised).
-- **13 effects**: Typewriter, Pop Badge, Glow, Ink Underline, Fade/Slide/Bounce In, Sparkle, Confetti, Ripple, Particle Cloud, Cyber. Rendered as click-through overlays. Respects Reduce Motion (overridable).
-- **Controls**: per-snippet and per-group switches, global on/off hotkey, timed pause, pause per app, snippet search panel (hotkey), ⌘K command palette, drag and drop between groups.
-- **Starter packs**: Emoji Shortcodes (`:fire:` → 🔥), Typo Fixes (`teh` → `the`), Dates and Times (`;dmy` → `18/11/2026`). Each installs as a removable group.
-- **History**: recent expansions with snippet, app and time. Local only, can be turned off.
-- **Icons**: any SF Symbol or emoji for groups and snippets.
-- **Update check**: checks GitHub Releases daily (or via Quill › Check for Updates…) and shows a banner and menu item when a newer version is out. Download, skip or remind later. Configure the repo with `QuillUpdateRepository` in `Config/Info.plist`.
-- **Shortcuts app**: Turn Quill On/Off, Get Snippet Text, Insert Snippet, Add Snippet.
-- **Data**: local JSON, daily backups (last 7), JSON export/import, import from macOS Text Replacements. Usage stats per snippet and per day.
-
-## Screenshots
-
-| Editor | Command palette |
-| --- | --- |
-| ![Editor](docs/screenshots/editor.png) | ![Command palette](docs/screenshots/palette.png) |
-
-| History | Starter packs |
-| --- | --- |
-| ![History](docs/screenshots/history.png) | ![Starter packs](docs/screenshots/packs.png) |
-
-| Icon picker | Suggestion bubble |
-| --- | --- |
-| ![Icon picker](docs/screenshots/icon-picker.png) | ![Suggestion bubble](docs/screenshots/bubble.png) |
-
-| Fill-in form |
-| --- |
-| ![Fill-in form](docs/screenshots/fill-in.png) |
-
-| Pop Badge | Cyber |
-| --- | --- |
-| ![Pop Badge](docs/screenshots/pop-badge.png) | ![Cyber](docs/screenshots/cyber.png) |
-
-| Effects settings | Suggestion settings |
-| --- | --- |
-| ![Effects](docs/screenshots/settings-effects.png) | ![Suggestions](docs/screenshots/settings-suggestions.png) |
+Quill is a system-wide text expander that lives in the menu bar. You type `eml` and get `name@example.com`, in any app. It works like macOS Text Replacements, but works in every app, shows a suggestion bubble as you type, supports tokens and fill-in fields, and keeps everything in a local JSON file. Native SwiftUI, no dependencies, no account.
 
 ## Download
 
-Get `Quill-1.2.dmg` from [Releases](../../releases/latest), open it and drag Quill to Applications.
+**[Download the latest version](https://github.com/ajd1776/Quill-Auto-Text-Replacement/releases/latest)**, open the `.dmg` and drag Quill into Applications.
 
-First launch: Quill isn't notarized, so macOS blocks it once. Open System Settings › Privacy & Security, click **Open Anyway**, then grant Accessibility access when asked. Universal build (Apple Silicon and Intel), macOS 15+.
+Requires macOS 15 or later (Liquid Glass on macOS 26). Universal build for Apple Silicon and Intel.
 
-## Requirements
+> [!NOTE]
+> Quill isn't notarised, so macOS blocks the first launch. Open System Settings › Privacy & Security, click **Open Anyway**, then allow Accessibility access when Quill asks. It needs that to see what you type and to type the replacement.
 
-- macOS 15+ (Liquid Glass on macOS 26)
-- Xcode 26
-- Accessibility permission (keyboard event tap + cursor position)
+## Features
 
-## Build from source
+### Expansion
+- **Works everywhere.** Native apps, browsers and Electron apps. Shortcuts are case-sensitive, whole-word matches.
+- **Your choice of trigger.** Each snippet expands after a space, punctuation or Return, or the moment you finish typing the shortcut.
+- **Undo.** Press Delete straight after an expansion to get back what you typed.
+- **Case matching.** `EML` gives ALL CAPS and `Eml` gives Capitalised, if you turn it on for that snippet.
+- **Per-app limits.** Make a snippet work only in the apps you choose, or pause Quill in an app entirely.
+
+### Suggestions and tokens
+- **Suggestion bubble.** A bubble appears above the text you're typing, like the macOS replacement bubble. Space accepts an exact match, Tab accepts the highlighted one, ↑ ↓ choose, Esc dismisses.
+- **Tokens.** `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}`, `{cursor}` and `{input:Label}`.
+- **Fill-in fields.** `{input:Name}` opens a small form before the text goes in.
+
+### Library
+- **Pages.** Toolbar tabs switch between Snippets, Stats, History and Settings (<kbd>⌘</kbd> <kbd>1</kbd>–<kbd>4</kbd>).
+- **List or grid.** Browse snippets as rows or as cards, sorted by shortcut, most used, recently used or newest.
+- **Smart filters.** All, Recently Used, On, Off and With Tokens, plus your own groups, each with a count.
+- **Groups.** Colour (any custom colour), SF Symbol or emoji icon, and an on/off switch for the whole group. Drag snippets between groups, or drop text from another app to make a new snippet.
+- **Command palette.** <kbd>⌘</kbd> <kbd>K</kbd> runs any action or jumps to any snippet.
+- **Starter packs.** Emoji shortcodes (`:fire:` → 🔥), typo fixes (`teh` → `the`) and date formats (`;dmy` → `18/11/2026`). Each one installs as a group you can remove.
+
+### Menu bar
+- **Search panel.** Click the menu bar icon to search, filter by group, switch snippets on and off, or click a snippet to type it into the app you were using.
+- **Quick controls.** Turn Quill on or off, pause for 15 minutes, an hour or until tomorrow, or pause in the current app.
+- **10 menu bar icons.** Pick the one you like in Settings › General. Each shows a slash when Quill is off.
+
+### Everything else
+- **13 effects.** Typewriter, Pop Badge, Glow, Ink Underline, Fade, Slide, Bounce, Sparkle, Confetti, Ripple, Particle Cloud, Cyber, or none. Click-through overlays that respect Reduce Motion.
+- **Stats and history.** Keys saved, expansions per day, top snippets, and a log of recent expansions. History stays on your Mac and can be turned off.
+- **Shortcuts app.** Turn Quill On/Off, Get Snippet Text, Insert Snippet and Add Snippet actions.
+- **Your data.** One local JSON file, daily backups (last 7), JSON import and export, and import from macOS Text Replacements.
+- **Update check.** Checks GitHub Releases once a day and tells you when a new version is out.
+
+## Screenshots
+
+| Grid view | Menu bar panel |
+| --- | --- |
+| ![Snippets shown as cards in a three-column grid](docs/screenshots/grid.png) | ![Menu bar panel with search field, group filter chips and a list of snippets with switches](docs/screenshots/menu-bar.png) |
+
+| Stats | Settings |
+| --- | --- |
+| ![Stats page: keys saved, tiles for expansions and groups, and a 14-day bar chart](docs/screenshots/stats.png) | ![Settings page with General selected, showing launch at login and the menu bar icon picker](docs/screenshots/settings.png) |
+
+| History | Command palette |
+| --- | --- |
+| ![History page listing recent expansions with app and time](docs/screenshots/history.png) | ![Command palette searching actions and snippets](docs/screenshots/palette.png) |
+
+| Suggestion bubble | Fill-in form |
+| --- | --- |
+| ![Suggestion bubble above typed text, offering three matching snippets](docs/screenshots/bubble.png) | ![Fill-in form asking for Name and Order before inserting](docs/screenshots/fill-in.png) |
+
+| Starter packs | Icon picker |
+| --- | --- |
+| ![Starter pack gallery with emoji, typo and date packs](docs/screenshots/packs.png) | ![Icon picker with SF Symbols and emoji](docs/screenshots/icon-picker.png) |
+
+| Pop Badge effect | Cyber effect |
+| --- | --- |
+| ![Pop Badge effect over an expanded snippet](docs/screenshots/pop-badge.png) | ![Cyber effect over an expanded snippet](docs/screenshots/cyber.png) |
+
+## How to use it
+
+1. Open Quill and allow Accessibility access.
+2. Click **+** in the toolbar, type a shortcut such as `eml` and the text it should become.
+3. Type `eml` followed by a space in any app.
+
+| Shortcut | Action |
+| --- | --- |
+| <kbd>⌘</kbd> <kbd>N</kbd> | New snippet |
+| <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>N</kbd> | New group |
+| <kbd>⌘</kbd> <kbd>K</kbd> | Command palette |
+| <kbd>⌘</kbd> <kbd>1</kbd>–<kbd>4</kbd> | Snippets, Stats, History, Settings |
+| <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>P</kbd> | Turn expansion on or off |
+| <kbd>⌘</kbd> <kbd>,</kbd> | Settings |
+
+The global on/off and search-panel hotkeys are set in Settings › Shortcuts.
+
+## FAQ
+
+<details>
+<summary><b>Why does it need Accessibility access?</b></summary>
+
+To see the shortcut you type (a keyboard event tap), to type the replacement, and to find the cursor so the bubble and effects sit above your text. What you type never leaves your Mac, and macOS never sends password fields to Quill.
+
+</details>
+
+<details>
+<summary><b>Where are my snippets stored?</b></summary>
+
+In `~/Library/Application Support/Quill/snippets.json`, with daily backups next to it. Settings › Backup can export and import it, and show the backups in Finder.
+
+</details>
+
+<details>
+<summary><b>The bubble or effect appears in the wrong place in one app.</b></summary>
+
+Quill asks the app where the cursor is. Some apps don't say; there the bubble is skipped rather than drawn in the wrong place. Expansion itself still works.
+
+</details>
+
+<details>
+<summary><b>I rebuilt from source and expansion stopped working.</b></summary>
+
+An ad-hoc signed build counts as a new app to macOS, so allow Accessibility access again. Signing with your own team (below) keeps the permission across rebuilds.
+
+</details>
+
+## Building from source
 
 ```bash
-Tools/install.sh
+git clone https://github.com/ajd1776/Quill-Auto-Text-Replacement.git
 ```
 
-Builds a Release, copies it to `/Applications` and launches it. Then grant Accessibility access in System Settings › Privacy & Security › Accessibility.
+```bash
+cd Quill-Auto-Text-Replacement && Tools/install.sh
+```
 
-No Apple account needed: without a Team ID the build is signed ad hoc. The only catch is that macOS ties the Accessibility grant to the exact binary, so you re-grant it after each rebuild.
-
-Optional, to keep the grant across rebuilds, sign with your (free) Apple Development team:
+Builds a Release, copies it to `/Applications` and opens it. Needs Xcode 26. No Apple account is needed; without a Team ID the build is signed ad hoc. To keep the Accessibility grant across rebuilds, sign with your free Apple Development team:
 
 ```bash
 echo 'DEVELOPMENT_TEAM = YOUR_TEAM_ID' > Config/Signing.xcconfig
 ```
 
-## Development
+<details>
+<summary><b>Development notes</b></summary>
 
 ```bash
 xcodebuild -project Quill.xcodeproj -scheme Quill -configuration Debug \
   -derivedDataPath build.noindex CODE_SIGN_IDENTITY=- build
+```
 
-# Engine and model self-test (Debug only)
+```bash
 build.noindex/Build/Products/Debug/Quill.app/Contents/MacOS/Quill -QuillSelfTest
 ```
 
 Debug-only launch arguments:
 
+- `-QuillSelfTest`: engine and model self-test.
 - `-QuillDemoData`: in-memory sample library, never saved.
-- `-QuillUpdateCheck`: one live update check, prints the result and quits. `-QuillFakeUpdate` simulates an available update.
-- `-QuillDemo <view>`: opens `overview`, `editor`, `palette`, a settings pane, `bubble`, `fillin`, or plays an effect by name.
+- `-QuillDemo <view>`: opens `library`, `grid`, `stats`, `history`, `editor`, `panel`, `palette`, a settings pane, `bubble`, `fillin`, or plays an effect by name.
+- `-QuillUpdateCheck`: one live update check, then quits. `-QuillFakeUpdate` simulates an available update.
 
-## How it works
+How it works:
 
-- `CGEventTap` on the session watches key-downs, keeps a short buffer, and matches shortcuts at word boundaries.
-- Replacement: synthetic backspaces, then Unicode key events (paste with clipboard restore for >160 chars). Quill's own events are tagged and ignored.
-- Cursor position comes from the Accessibility API (`AXBoundsForRange`, or `AXBoundsForTextMarkerRange` for Chromium/Electron), queried off the main thread.
-- Secure input fields never reach the event tap.
-
-## Layout
+- A session `CGEventTap` watches key-downs, keeps a short buffer and matches shortcuts at word boundaries.
+- Replacement sends synthetic backspaces, then Unicode key events (paste with clipboard restore above 160 characters). Quill tags its own events and ignores them.
+- The cursor position comes from the Accessibility API (`AXBoundsForRange`, or `AXBoundsForTextMarkerRange` for Chromium and Electron), queried off the main thread.
 
 | Path | Contents |
 | --- | --- |
-| `Quill/App` | Entry point, app state, menu commands, App Intents |
+| `Quill/App` | Entry point, app state, commands, menu bar icons, App Intents |
 | `Quill/Engine` | Event tap, matching, key emitter |
 | `Quill/Suggestions` | Suggestion bubble, fill-in form |
 | `Quill/Overlays` | Cursor locator, effect overlays |
 | `Quill/Model` | Snippets, groups, store, token renderer |
-| `Quill/Views` | Library, editor, overview, settings, menus |
+| `Quill/Views` | Pages, editor, menu bar panel, settings |
 | `Quill/Search` | Floating search panel |
 | `Quill/Hotkeys` | Global hotkeys and recorder |
 | `Quill/Import` | macOS Text Replacements reader |
 | `Quill/Debug` | Self-test and demo data |
 | `Config` | `Base.xcconfig`, Info.plist additions |
-| `Tools` | Install script, icon generator |
+| `Tools` | Install script, icon generators |
+
+</details>
+
+## Contributing
+
+Bug reports and pull requests are welcome.

@@ -73,17 +73,18 @@ struct OverviewView: View {
                 }
             }
             .padding(28)
-            .frame(maxWidth: 980, alignment: .leading)
+            .frame(maxWidth: 1040)
+            .frame(maxWidth: .infinity)
         }
         .background(Color(nsColor: .textBackgroundColor))
-        .navigationTitle("Overview")
+        .navigationTitle("Stats")
     }
 
     /// The headline: what Quill has saved, on a gradient in the accent colour.
     private var hero: some View {
         HStack(alignment: .center, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Overview")
+                Text("All Time")
                     .font(.headline)
                     .foregroundStyle(.white.opacity(0.85))
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -180,7 +181,7 @@ struct OverviewView: View {
                 y: .value("Shortcut", snippet.trigger),
                 height: .ratio(0.6)
             )
-            .foregroundStyle(store.group(for: snippet)?.color.color ?? Color.accentColor)
+            .foregroundStyle(store.group(for: snippet)?.tint ?? Color.accentColor)
             .clipShape(UnevenRoundedRectangle(bottomTrailingRadius: 4, topTrailingRadius: 4))
             .annotation(position: .trailing, spacing: 6) {
                 Text("\(snippet.useCount)")
@@ -207,7 +208,7 @@ struct OverviewView: View {
 
         return VStack(alignment: .leading, spacing: 10) {
             ForEach(rows, id: \.group.id) { row in
-                GroupBar(name: row.group.name, symbol: row.group.symbol, color: row.group.color.color,
+                GroupBar(name: row.group.name, symbol: row.group.symbol, color: row.group.tint,
                          uses: row.uses, fraction: Double(row.uses) / Double(maxUses))
             }
             if ungrouped > 0 {

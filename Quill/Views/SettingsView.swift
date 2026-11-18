@@ -1,8 +1,28 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-enum SettingsPane: String {
+enum SettingsPane: String, CaseIterable, Identifiable {
     case general, suggestions, effects, shortcuts, backup
+    var id: String { rawValue }
+    var title: String { rawValue.capitalized }
+    var symbol: String {
+        switch self {
+        case .general: "gearshape.fill"
+        case .suggestions: "text.bubble.fill"
+        case .effects: "sparkles"
+        case .shortcuts: "command"
+        case .backup: "externaldrive.fill"
+        }
+    }
+    var color: Color {
+        switch self {
+        case .general: .gray
+        case .suggestions: .blue
+        case .effects: .purple
+        case .shortcuts: .indigo
+        case .backup: .teal
+        }
+    }
 }
 
 /// Quill Settings: a toolbar of panes, reopening on the last one used.
@@ -59,7 +79,7 @@ private struct FooterText: View {
 
 // MARK: - General
 
-private struct GeneralSettingsPane: View {
+struct GeneralSettingsPane: View {
     @Environment(AppState.self) private var state
     @AppStorage(AppState.showMenuBarExtraKey) private var showsMenuBarExtra = true
     @State private var launchesAtLogin = LoginItem.isEnabled
@@ -70,6 +90,20 @@ private struct GeneralSettingsPane: View {
             Section {
                 Toggle("Launch at login", isOn: $launchesAtLogin)
                     .onChange(of: launchesAtLogin) { _, newValue in setLaunchAtLogin(newValue) }
+                Picker("Menu bar icon", selection: Binding(
+                    get: { state.menuBarIcon },
+                    set: { state.menuBarIcon = $0 }
+                )) {
+                    ForEach(MenuBarIcon.allCases) { icon in
+                        Label {
+                            Text(icon.title)
+                        } icon: {
+                            Image(nsImage: icon.image(isOn: true))
+                        }
+                        .tag(icon)
+                    }
+                }
+                .disabled(!showsMenuBarExtra)
                 Toggle("Show in menu bar", isOn: $showsMenuBarExtra)
                     .onChange(of: showsMenuBarExtra) { state.updateActivationPolicy() }
             } footer: {
@@ -178,7 +212,7 @@ private struct PausedAppRow: View {
 
 // MARK: - Suggestions
 
-private struct SuggestionSettingsPane: View {
+struct SuggestionSettingsPane: View {
     @Environment(AppState.self) private var state
     @State private var sample = SuggestionModel()
 
@@ -190,13 +224,8 @@ private struct SuggestionSettingsPane: View {
                 Toggle("Show suggestions as you type", isOn: $state.showsSuggestions)
                 Toggle("Include partial matches", isOn: $state.showsPartialSuggestions)
                     .disabled(!state.showsSuggestions)
-                Picker("Position", selection: $state.bubblePosition) {
-                    ForEach(BubblePosition.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                .disabled(!state.showsSuggestions)
             } footer: {
-                FooterText("Like the macOS text replacement bubble: Space or punctuation accepts an exact match, Tab accepts the highlighted suggestion, ↑↓ choose and Esc dismisses. Partial matches appear after 2 characters of a shortcut.")
+                FooterText("Like the macOS text replacement bubble: Space or punctuation accepts an exact match, Tab accepts the highlighted suggestion, ↑↓ choose and Esc dismisses. Partial matches appear after 2 characters of a shortcut. The bubble sits above the text, and stays hidden in apps that don't report the cursor position.")
             }
 
             Section("Preview") {
@@ -239,7 +268,7 @@ private struct SuggestionSettingsPane: View {
 
 // MARK: - Effects
 
-private struct EffectsSettingsPane: View {
+struct EffectsSettingsPane: View {
     @Environment(AppState.self) private var state
     @Environment(\.accessibilityReduceMotion) private var systemReduceMotion
 
@@ -372,7 +401,7 @@ private struct StyleTile: View {
 
 // MARK: - Shortcuts
 
-private struct ShortcutSettingsPane: View {
+struct ShortcutSettingsPane: View {
     @Environment(AppState.self) private var state
 
     var body: some View {
@@ -415,7 +444,7 @@ private struct ShortcutSettingsPane: View {
 
 // MARK: - Backup
 
-private struct BackupSettingsPane: View {
+struct BackupSettingsPane: View {
     @Environment(AppState.self) private var state
     @Environment(\.openWindow) private var openWindow
 

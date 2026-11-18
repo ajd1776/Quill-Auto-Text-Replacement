@@ -10,9 +10,37 @@ struct SnippetGroup: Identifiable, Codable, Hashable {
     var isExpanded = true
     /// Set for groups added from a built-in pack, so the pack can be recognised and removed.
     var packID: String?
+    /// A colour of the person's own choosing, as #RRGGBB. Overrides `color` when set.
+    var customColor: String?
 
     enum CodingKeys: String, CodingKey {
-        case id, name, color, symbol, isEnabled, isExpanded, packID
+        case id, name, color, symbol, isEnabled, isExpanded, packID, customColor
+    }
+
+    /// The colour to draw this group in.
+    var tint: Color {
+        customColor.flatMap(Color.init(hex:)) ?? color.color
+    }
+}
+
+extension Color {
+    /// From "#RRGGBB" (or "RRGGBB").
+    init?(hex: String) {
+        let digits = hex.trimmingCharacters(in: .whitespaces).replacingOccurrences(of: "#", with: "")
+        guard digits.count == 6, let value = UInt32(digits, radix: 16) else { return nil }
+        self.init(.sRGB,
+                  red: Double((value >> 16) & 0xFF) / 255,
+                  green: Double((value >> 8) & 0xFF) / 255,
+                  blue: Double(value & 0xFF) / 255)
+    }
+
+    /// "#RRGGBB" in sRGB, for saving.
+    var hexString: String? {
+        guard let rgb = NSColor(self).usingColorSpace(.sRGB) else { return nil }
+        return String(format: "#%02X%02X%02X",
+                      Int((rgb.redComponent * 255).rounded()),
+                      Int((rgb.greenComponent * 255).rounded()),
+                      Int((rgb.blueComponent * 255).rounded()))
     }
 }
 
@@ -34,6 +62,7 @@ extension SnippetGroup {
         isEnabled = try container.decodeIfPresent(Bool.self, forKey: .isEnabled) ?? true
         isExpanded = try container.decodeIfPresent(Bool.self, forKey: .isExpanded) ?? true
         packID = try container.decodeIfPresent(String.self, forKey: .packID)
+        customColor = try container.decodeIfPresent(String.self, forKey: .customColor)
     }
 }
 

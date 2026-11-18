@@ -12,7 +12,8 @@ struct QuillApp: App {
             LibraryView()
                 .environment(state)
         }
-        .defaultSize(width: 1100, height: 720)
+        .defaultSize(width: 1320, height: 820)
+        .windowResizability(.contentMinSize)
         .defaultLaunchBehavior(hasCompletedWelcome && showsMenuBarExtra ? .suppressed : .presented)
         .commands {
             QuillCommands(state: state)
@@ -27,13 +28,13 @@ struct QuillApp: App {
         .defaultLaunchBehavior(hasCompletedWelcome ? .suppressed : .presented)
 
         MenuBarExtra(isInserted: $showsMenuBarExtra) {
-            MenuBarMenu()
+            MenuBarPanel()
                 .environment(state)
         } label: {
             MenuBarLabel()
                 .environment(state)
         }
-        .menuBarExtraStyle(.menu)
+        .menuBarExtraStyle(.window)
 
         Settings {
             SettingsView()
@@ -55,7 +56,7 @@ private struct MenuBarLabel: View {
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Image(systemName: state.status == .on ? "pencil.line" : "pencil.slash")
+        Image(nsImage: state.menuBarIcon.image(isOn: state.status == .on))
             .accessibilityLabel(state.status == .on ? "Quill, on" : "Quill, off")
             .onAppear {
                 state.openLibraryAction = { openWindow(id: WindowID.library) }
@@ -66,19 +67,41 @@ private struct MenuBarLabel: View {
     }
 
     #if DEBUG
+    static var demoPanel: NSWindow?
+
     /// Opens a window or overlay at launch for screenshots: -QuillDemo library|settings|search|badge|sparkle|hud
     private func runDemoIfRequested() {
         let arguments = CommandLine.arguments
         guard let index = arguments.firstIndex(of: "-QuillDemo"), index + 1 < arguments.count else { return }
         let demo = arguments[index + 1]
         if arguments.contains("-QuillLight") { NSApp.appearance = NSAppearance(named: .aqua) }
+        // Screenshots use the default window size, whatever size the window was last left at.
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+            for window in NSApp.windows where window.identifier?.rawValue.contains(WindowID.library) == true {
+                window.setFrame(NSRect(x: 160, y: 120, width: 1320, height: 820), display: true)
+            }
+        }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             switch demo {
             case "library":
                 openWindow(id: WindowID.library)
-            case "overview":
-                state.selection = [.overview]
+            case "grid":
+                UserDefaults.standard.set("grid", forKey: "snippetLayout")
                 openWindow(id: WindowID.library)
+            case "overview", "stats":
+                state.page = .stats
+                openWindow(id: WindowID.library)
+            case "panel":
+                let host = NSHostingController(rootView: MenuBarPanel().environment(state).ignoresSafeArea())
+                let window = NSPanel(contentViewController: host)
+                window.styleMask = [.titled, .fullSizeContentView, .nonactivatingPanel]
+                window.titlebarAppearsTransparent = true
+                window.titleVisibility = .hidden
+                window.title = "Quill Panel"
+                window.hidesOnDeactivate = false
+                window.center()
+                window.orderFrontRegardless()
+                Self.demoPanel = window
             case "editor":
                 openWindow(id: WindowID.library)
                 let snippets = state.store.snippets.sorted(by: state.sortOrder.areInIncreasingOrder)
@@ -87,9 +110,10 @@ private struct MenuBarLabel: View {
                 }
             case "general", "suggestions", "effects", "shortcuts", "backup":
                 UserDefaults.standard.set(demo, forKey: "settingsPane")
-                openSettings()
+                state.page = .settings
+                openWindow(id: WindowID.library)
             case "history":
-                state.selection = [.history]
+                state.page = .history
                 openWindow(id: WindowID.library)
             case "packs":
                 openWindow(id: WindowID.library)

@@ -16,6 +16,40 @@ enum SidebarItem: Hashable {
     }
 }
 
+/// The pages in the library window's toolbar.
+enum AppPage: String, CaseIterable, Identifiable {
+    case snippets, stats, history, settings
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .snippets: "Snippets"
+        case .stats: "Stats"
+        case .history: "History"
+        case .settings: "Settings"
+        }
+    }
+    var symbol: String {
+        switch self {
+        case .snippets: "text.quote"
+        case .stats: "chart.bar.xaxis"
+        case .history: "clock.arrow.circlepath"
+        case .settings: "gearshape"
+        }
+    }
+}
+
+/// What the Snippets page shows, chosen in its sidebar.
+enum SnippetScope: Hashable {
+    case all, recent, enabled, disabled, tokens, ungrouped
+    case group(SnippetGroup.ID)
+}
+
+/// How the Snippets page lays snippets out.
+enum SnippetLayout: String, CaseIterable, Identifiable {
+    case list, grid
+    var id: String { rawValue }
+}
+
 /// App-wide state shared by the menu bar menu, library window, search panel and settings.
 @MainActor
 @Observable
@@ -109,6 +143,10 @@ final class AppState {
         didSet { defaults.set(soundVolume, forKey: Keys.soundVolume) }
     }
 
+    var menuBarIcon: MenuBarIcon = .enchantedNib {
+        didSet { defaults.set(menuBarIcon.rawValue, forKey: Keys.menuBarIcon) }
+    }
+
     var keepsHistory = true {
         didSet {
             defaults.set(keepsHistory, forKey: Keys.keepsHistory)
@@ -142,13 +180,60 @@ final class AppState {
 
     // MARK: Library window
 
-    var selection: Set<SidebarItem> = [.overview]
+    var page: AppPage = .snippets
+    var scope: SnippetScope = .all
+
+    /// Selected snippets. Selecting .overview or .history (from menus, ⌘K) switches page instead.
+    var selection: Set<SidebarItem> = [] {
+        didSet { route() }
+    }
+
+    private func route() {
+        if selection.contains(.overview) {
+            selection = []
+            page = .stats
+        } else if selection.contains(.history) {
+            selection = []
+            page = .history
+        } else if !selection.isEmpty {
+            page = .snippets
+            // Make sure a snippet picked elsewhere is visible in the current filter.
+            let visible = Set(snippets(in: scope).map(\.id))
+            if !selectedSnippetIDs.isSubset(of: visible) { scope = .all }
+        }
+    }
+
+    /// The snippets a scope covers, before search and sorting.
+    func snippets(in scope: SnippetScope) -> [Snippet] {
+        switch scope {
+        case .all: store.snippets
+        case .recent: store.snippets.filter { $0.lastUsed != nil }
+        case .enabled: store.snippets.filter(store.isActive)
+        case .disabled: store.snippets.filter { !store.isActive($0) }
+        case .tokens: store.snippets.filter { TokenRenderer.containsTokens($0.expansion) }
+        case .ungrouped: store.snippets(in: nil)
+        case .group(let id): store.snippets(in: id)
+        }
+    }
+
+    func title(for scope: SnippetScope) -> String {
+        switch scope {
+        case .all: "All Snippets"
+        case .recent: "Recently Used"
+        case .enabled: "On"
+        case .disabled: "Off"
+        case .tokens: "With Tokens"
+        case .ungrouped: "Ungrouped"
+        case .group(let id): store.group(id)?.name ?? "Group"
+        }
+    }
     var importSession: ImportSession?
     var alertMessage: (title: String, message: String)?
     var isShowingFileImporter = false
     var renamingGroupID: SnippetGroup.ID?
     var isShowingPalette = false
     var isShowingPacks = false
+    var colorPickerGroupID: SnippetGroup.ID?
     /// What the icon picker sheet is choosing an icon for, when opened from a menu.
     var iconPickerTarget: IconTarget?
 
@@ -178,6 +263,7 @@ final class AppState {
         static let soundVolume = "soundVolume"
         static let keepsDailyBackups = "keepsDailyBackups"
         static let keepsHistory = "keepsHistory"
+        static let menuBarIcon = "menuBarIcon"
         static let sortOrder = "sortOrder"
         static let isPaused = "isPaused"
         static let pausedUntil = "pausedUntil"
@@ -225,6 +311,7 @@ final class AppState {
         }
         keepsDailyBackups = defaults.object(forKey: Keys.keepsDailyBackups) as? Bool ?? true
         keepsHistory = defaults.object(forKey: Keys.keepsHistory) as? Bool ?? true
+        menuBarIcon = defaults.string(forKey: Keys.menuBarIcon).flatMap(MenuBarIcon.init) ?? .enchantedNib
         sortOrder = defaults.string(forKey: Keys.sortOrder).flatMap(SnippetSortOrder.init) ?? .shortcut
         isPaused = defaults.bool(forKey: Keys.isPaused)
         pausedUntil = defaults.object(forKey: Keys.pausedUntil) as? Date
@@ -433,7 +520,8 @@ final class AppState {
 
     /// The group a new snippet should go in: the group of the selected snippet, if any.
     private var currentGroupID: SnippetGroup.ID? {
-        selectedSnippetIDs.first.flatMap { store.snippet($0)?.groupID }
+        if case .group(let id) = scope { return id }
+        return selectedSnippetIDs.first.flatMap { store.snippet($0)?.groupID }
     }
 
     func newSnippet(in groupID: SnippetGroup.ID?? = nil) {
@@ -444,6 +532,8 @@ final class AppState {
 
     func newGroup() {
         let group = store.addGroup()
+        page = .snippets
+        scope = .group(group.id)
         renamingGroupID = group.id
     }
 

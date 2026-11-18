@@ -111,7 +111,7 @@ struct FillInView: View {
 
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 12) {
-                SnippetIcon(symbol: model.snippet.symbol ?? model.group?.symbol, color: model.group?.color.color ?? .accentColor, size: 34)
+                SnippetIcon(symbol: model.snippet.symbol ?? model.group?.symbol, color: model.group?.tint ?? .accentColor, size: 34)
                 VStack(alignment: .leading, spacing: 1) {
                     Text(model.snippet.trigger)
                         .font(.headline.monospaced())

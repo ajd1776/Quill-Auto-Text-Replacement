@@ -75,7 +75,7 @@ final class SuggestionBubbleController {
     }
 
     private func locateAndShow(token: Int) {
-        CaretLocator.lookup({ CaretLocator.caret($0, fieldFallback: true) }) { [weak self] caret in
+        CaretLocator.lookup({ CaretLocator.caret($0, fieldFallback: false) }) { [weak self] caret in
             guard let self, token == self.generation, !self.model.items.isEmpty else { return }
             guard let caret else {
                 quillLog.debug("Bubble: no cursor position, so hidden")
@@ -95,10 +95,8 @@ final class SuggestionBubbleController {
         let screen = NSScreen.screens.first { $0.frame.intersects(caret) }?.visibleFrame ?? .infinite
 
         var y: CGFloat
-        switch AppState.shared.bubblePosition {
-        case .below: y = below < screen.minY ? above : below
-        case .above: y = above + size.height > screen.maxY ? below : above
-        }
+        // Above the text, like the system's suggestion bubble; below only when there's no room at the top.
+        y = above + size.height > screen.maxY ? below : above
         y = min(max(y, screen.minY), screen.maxY - size.height)
         let x = min(max(caret.minX - 14, screen.minX), screen.maxX - size.width)
 

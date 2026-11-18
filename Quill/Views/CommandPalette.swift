@@ -24,7 +24,7 @@ struct CommandPalette: View {
         var list: [Item] = [
             Item(id: "new", title: "New Snippet", subtitle: "⌘N", symbol: "square.and.pencil", color: .blue) { state.newSnippet() },
             Item(id: "group", title: "New Group", subtitle: "⇧⌘N", symbol: "folder.badge.plus", color: .teal) { state.newGroup() },
-            Item(id: "overview", title: "Show Overview", subtitle: "⌘0", symbol: "chart.bar.xaxis", color: .purple) { state.selection = [.overview] },
+            Item(id: "overview", title: "Show Stats", subtitle: "⌘2", symbol: "chart.bar.xaxis", color: .purple) { state.page = .stats },
             Item(id: "power", title: state.isOn ? "Turn Quill Off" : "Turn Quill On", subtitle: "⇧⌘P",
                  symbol: state.isOn ? "pause.circle" : "play.circle", color: state.isOn ? .orange : .green) { state.setOn(!state.isOn) },
             Item(id: "search", title: "Search and Insert Snippet", subtitle: "Floating panel", symbol: "magnifyingglass", color: .indigo) {
@@ -32,14 +32,14 @@ struct CommandPalette: View {
                 SearchPanelController.shared.show()
             },
             Item(id: "packs", title: "Add Starter Pack…", subtitle: "Emoji, typos, dates", symbol: "shippingbox", color: .orange) { state.isShowingPacks = true },
-            Item(id: "history", title: "Show History", subtitle: "Recent expansions", symbol: "clock.arrow.circlepath", color: .teal) { state.selection = [.history] },
+            Item(id: "history", title: "Show History", subtitle: "⌘3", symbol: "clock.arrow.circlepath", color: .teal) { state.page = .history },
             Item(id: "importMac", title: "Import Text Replacements from macOS", subtitle: "File menu", symbol: "square.and.arrow.down", color: .gray) { state.beginSystemImport() },
             Item(id: "import", title: "Import Snippets…", subtitle: "⇧⌘I", symbol: "tray.and.arrow.down", color: .gray) { state.isShowingFileImporter = true },
             Item(id: "export", title: "Export Snippets…", subtitle: "⇧⌘E", symbol: "tray.and.arrow.up", color: .gray) { state.exportLibrary() },
             Item(id: "updates", title: "Check for Updates…", subtitle: "Quill \(UpdateChecker.currentVersion)", symbol: "arrow.down.circle", color: .blue) {
                 Task { await state.updates.check(manual: true) }
             },
-            Item(id: "settings", title: "Settings…", subtitle: "⌘,", symbol: "gearshape", color: .gray) { openSettings() },
+            Item(id: "settings", title: "Settings…", subtitle: "⌘,", symbol: "gearshape", color: .gray) { state.page = .settings },
         ]
         for order in SnippetSortOrder.allCases where order != state.sortOrder {
             list.append(Item(id: "sort-\(order.rawValue)", title: "Sort by \(order.title)", subtitle: "View",
@@ -57,7 +57,7 @@ struct CommandPalette: View {
                             title: snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger,
                             subtitle: snippet.preview,
                             symbol: snippet.symbol ?? group?.symbol ?? "text.quote",
-                            color: group?.color.color ?? .accentColor) {
+                            color: group?.tint ?? .accentColor) {
                     state.selection = [.snippet(snippet.id)]
                 }
             }

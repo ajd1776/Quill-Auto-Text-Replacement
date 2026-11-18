@@ -91,7 +91,7 @@ private struct HistoryRow: View {
         let group = snippet.flatMap(state.store.group(for:))
 
         HStack(spacing: 12) {
-            SnippetIcon(symbol: snippet?.symbol ?? group?.symbol, color: group?.color.color ?? .accentColor, size: 30)
+            SnippetIcon(symbol: snippet?.symbol ?? group?.symbol, color: group?.tint ?? .accentColor, size: 30)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(entry.trigger)

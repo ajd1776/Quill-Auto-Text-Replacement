@@ -13,6 +13,14 @@ struct QuillCommands: Commands {
             }
         }
 
+        CommandGroup(replacing: .appSettings) {
+            Button("Settings…") {
+                showLibrary()
+                state.page = .settings
+            }
+            .keyboardShortcut(",")
+        }
+
         CommandGroup(after: .appSettings) {
             Toggle("Expand Snippets", isOn: Binding(
                 get: { state.isOn },
@@ -67,7 +75,7 @@ struct QuillCommands: Commands {
         CommandMenu("Snippet") {
             SnippetActionsMenu(ids: state.selectedSnippetIDs) { ids in
                 state.store.delete(ids, undoManager: nil)
-                state.selection = [.overview]
+                state.selection = []
             }
             .environment(state)
             .disabled(state.selectedSnippetIDs.isEmpty)
@@ -80,11 +88,13 @@ struct QuillCommands: Commands {
             }
             .keyboardShortcut("k")
 
-            Button("Show Overview") {
-                showLibrary()
-                state.selection = [.overview]
+            ForEach(Array(AppPage.allCases.enumerated()), id: \.element) { index, page in
+                Button("Show \(page.title)") {
+                    showLibrary()
+                    state.page = page
+                }
+                .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")))
             }
-            .keyboardShortcut("0")
 
             Picker("Sort By", selection: Binding(
                 get: { state.sortOrder },
