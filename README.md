@@ -6,6 +6,7 @@
 [![Download](https://img.shields.io/github/v/release/ajd1776/Quill-Auto-Text-Replacement?style=flat-square&label=download)](https://github.com/ajd1776/Quill-Auto-Text-Replacement/releases/latest)
 ![Platform](https://img.shields.io/badge/platform-macOS-blue?style=flat-square)
 ![Requires](https://img.shields.io/badge/requires-macOS_15%2B-orange?style=flat-square)
+[![Licence](https://img.shields.io/github/license/ajd1776/Quill-Auto-Text-Replacement?style=flat-square)](LICENSE)
 
 </div>
 
@@ -192,3 +193,7 @@ How it works:
 ## Contributing
 
 Bug reports and pull requests are welcome.
+
+## Licence
+
+MIT, see [LICENSE](LICENSE).
