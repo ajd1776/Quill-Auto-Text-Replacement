@@ -82,7 +82,7 @@ final class SnippetStore {
     private func load() {
         #if DEBUG
         // Screenshots use made-up snippets held in memory, never saved over the real file.
-        if CommandLine.arguments.contains("-QuillDemoData") {
+        if DemoLibrary.isActive {
             isLoading = true
             let demo = DemoLibrary.make()
             snippets = demo.snippets
@@ -308,12 +308,13 @@ final class SnippetStore {
         change(&groups[index])
     }
 
-    /// Moves a group up (-1) or down (+1) in the sidebar.
+    /// Moves a group up (negative) or down (positive) in the sidebar, stopping at either end.
     func moveGroup(_ id: SnippetGroup.ID, by offset: Int) {
         guard let index = groups.firstIndex(where: { $0.id == id }) else { return }
-        let target = index + offset
-        guard groups.indices.contains(target) else { return }
-        groups.swapAt(index, target)
+        let target = min(max(index + offset, 0), groups.count - 1)
+        guard target != index else { return }
+        let group = groups.remove(at: index)
+        groups.insert(group, at: target)
     }
 
     func deleteGroup(_ id: SnippetGroup.ID, keepingSnippets: Bool) {
@@ -341,7 +342,7 @@ final class SnippetStore {
 
     // MARK: Usage
 
-    static func dayKey(for date: Date) -> String {
+    nonisolated static func dayKey(for date: Date) -> String {
         let components = Calendar.current.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", components.year ?? 0, components.month ?? 0, components.day ?? 0)
     }

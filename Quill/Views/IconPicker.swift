@@ -161,7 +161,7 @@ private struct IconCell<Content: View>: View {
                 .frame(width: 40, height: 40)
                 .foregroundStyle(isSelected ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
                 .background(
-                    isSelected ? AnyShapeStyle(tint.gradient) : (isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(Color.clear)),
+                    isSelected ? AnyShapeStyle(tint) : (isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(Color.clear)),
                     in: RoundedRectangle(cornerRadius: 9, style: .continuous)
                 )
                 .contentShape(Rectangle())

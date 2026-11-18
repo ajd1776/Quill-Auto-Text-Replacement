@@ -94,7 +94,7 @@ private struct Swatch: View {
     var body: some View {
         Button(action: action) {
             Circle()
-                .fill(color.gradient)
+                .fill(color)
                 .frame(width: 28, height: 28)
                 .overlay { Circle().strokeBorder(.white.opacity(0.25), lineWidth: 0.5) }
                 .overlay {

@@ -82,7 +82,7 @@ final class AppState {
 
     var status: Status {
         #if DEBUG
-        if CommandLine.arguments.contains("-QuillDemoData") { return .on }
+        if DemoLibrary.isActive { return .on }
         #endif
         if !isTrusted || !isEngineRunning { return .needsAccess }
         if isPaused { return pausedUntil.map(Status.pausedUntil) ?? .off }

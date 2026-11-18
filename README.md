@@ -48,6 +48,8 @@ Requires macOS 15 or later (Liquid Glass on macOS 26). Universal build for Apple
 ### Library
 - **Pages.** Toolbar tabs switch between Snippets, Stats, History and Settings (<kbd>⌘</kbd> <kbd>1</kbd>–<kbd>4</kbd>).
 - **List or grid.** Browse snippets as rows or as cards, sorted by shortcut, most used, recently used or newest.
+- **Editor.** Select a snippet to edit it in sections: Text with a live preview, Behaviour (trigger, capitals, effect with a preview), Organise, Apps, and Usage with a 14-day chart for that snippet.
+- **Bulk actions.** Select several snippets to turn them on or off, move them to a group, set their effect or delete them.
 - **Smart filters.** All, Recently Used, On, Off and With Tokens, plus your own groups, each with a count.
 - **Groups.** Colour (any custom colour), SF Symbol or emoji icon, and an on/off switch for the whole group. Drag snippets between groups, or drop text from another app to make a new snippet.
 - **Command palette.** <kbd>⌘</kbd> <kbd>K</kbd> runs any action or jumps to any snippet.
@@ -63,10 +65,13 @@ Requires macOS 15 or later (Liquid Glass on macOS 26). Universal build for Apple
 <p align="center"><img src="docs/media/panel.gif" width="360" alt="The menu bar panel: searching for sig, then filtering by the Shop, Code and Personal groups"></p>
 
 ### Everything else
-- **13 effects.** Typewriter, Pop Badge, Glow, Ink Underline, Fade, Slide, Bounce, Sparkle, Confetti, Ripple, Particle Cloud, Cyber, or none. Click-through overlays that respect Reduce Motion.
+- **13 effects.** Typewriter, Pop Badge, Highlight, Ink Underline, Fade, Slide, Bounce, Sparkle, Confetti, Ripple, Particle Cloud, Cyber, or none. Click-through overlays that respect Reduce Motion.
 
 <p align="center"><img src="docs/media/effects.gif" width="720" alt="Four expansions with the Cyber, Confetti, Ripple and Particle Cloud effects"></p>
-- **Stats and history.** Keys saved, expansions per day, top snippets, and a log of recent expansions. History stays on your Mac and can be turned off.
+
+- **Stats.** Keys and time saved, your streak, expansions per day over 7, 14 or 30 days, busiest hours, top apps, top snippets, groups, and a Tidy Up list of snippets that are unused or broken.
+- **History.** Recent expansions by day. Search, filter by app or snippet, and copy the text again. It stays on your Mac and can be turned off.
+- **Welcome tour.** Four steps on first launch: Accessibility access, importing your macOS Text Replacements, starter packs and tips.
 - **Shortcuts app.** Turn Quill On/Off, Get Snippet Text, Insert Snippet and Add Snippet actions.
 - **Your data.** One local JSON file, daily backups (last 7), JSON import and export, and import from macOS Text Replacements.
 - **Update check.** Checks GitHub Releases once a day and tells you when a new version is out.
@@ -161,14 +166,16 @@ xcodebuild -project Quill.xcodeproj -scheme Quill -configuration Debug \
 ```
 
 ```bash
-build.noindex/Build/Products/Debug/Quill.app/Contents/MacOS/Quill -QuillSelfTest
+xcodebuild test -project Quill.xcodeproj -scheme Quill -destination 'platform=macOS' -derivedDataPath build.noindex
 ```
+
+Runs the unit tests (`QuillTests`: tokens, case matching, store, stats, history filters, the engine self-test) and the UI tests (`QuillUITests`: every page, the editor, bulk actions, grid, search and the welcome tour). The UI tests drive the mouse and keyboard for about two minutes. Both use the in-memory demo library, never your real snippets, and Debug builds use their own bundle ID (`dev.quill.Quill.debug`), so testing doesn't touch the installed app's settings.
 
 Debug-only launch arguments:
 
 - `-QuillSelfTest`: engine and model self-test.
 - `-QuillDemoData`: in-memory sample library, never saved.
-- `-QuillDemo <view>`: opens `library`, `grid`, `stats`, `history`, `editor`, `panel`, `palette`, a settings pane, `bubble`, `fillin`, or plays an effect by name.
+- `-QuillDemo <view>`: opens `library`, `grid`, `stats`, `history`, `editor`, `panel`, `palette`, `welcome` (with `-QuillWelcomeStep 0`–`3`), a settings pane, `bubble`, `fillin`, or plays an effect by name.
 - `-QuillDemo stage:<scene>`: plays a scripted scene for the README recordings: `hero`, `bubble`, `fillin`, `effects`, `panel` or `tour`. It prints the screen area to record.
 - `-QuillUpdateCheck`: one live update check, then quits. `-QuillFakeUpdate` simulates an available update.
 
@@ -184,12 +191,14 @@ How it works:
 | `Quill/Engine` | Event tap, matching, key emitter |
 | `Quill/Suggestions` | Suggestion bubble, fill-in form |
 | `Quill/Overlays` | Cursor locator, effect overlays |
-| `Quill/Model` | Snippets, groups, store, token renderer |
+| `Quill/Model` | Snippets, groups, store, token renderer, stats |
 | `Quill/Views` | Pages, editor, menu bar panel, settings |
 | `Quill/Search` | Floating search panel |
 | `Quill/Hotkeys` | Global hotkeys and recorder |
 | `Quill/Import` | macOS Text Replacements reader |
-| `Quill/Debug` | Self-test and demo data |
+| `Quill/Debug` | Self-test, demo data, scripted demo scenes |
+| `QuillTests` | Unit tests |
+| `QuillUITests` | UI tests |
 | `Config` | `Base.xcconfig`, Info.plist additions |
 | `Tools` | Install script, icon generators |
 

@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 enum SettingsPane: String, CaseIterable, Identifiable {
-    case general, suggestions, effects, shortcuts, backup
+    case general, suggestions, effects, shortcuts, backup, about
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
     var symbol: String {
@@ -12,6 +12,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .effects: "sparkles"
         case .shortcuts: "command"
         case .backup: "externaldrive.fill"
+        case .about: "info.circle.fill"
         }
     }
     var color: Color {
@@ -21,6 +22,7 @@ enum SettingsPane: String, CaseIterable, Identifiable {
         case .effects: .purple
         case .shortcuts: .indigo
         case .backup: .teal
+        case .about: .blue
         }
     }
 }
@@ -47,6 +49,9 @@ struct SettingsView: View {
             BackupSettingsPane()
                 .tabItem { Label("Backup", systemImage: "externaldrive") }
                 .tag(SettingsPane.backup)
+            AboutSettingsPane()
+                .tabItem { Label("About", systemImage: "info.circle") }
+                .tag(SettingsPane.about)
         }
         .frame(width: 580)
         .onAppear { state.windowAppeared("settings") }
@@ -505,5 +510,67 @@ struct BackupSettingsPane: View {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         openLibrary()
         state.importFile(url)
+    }
+}
+
+/// Version, where Quill comes from, and where its files live.
+struct AboutSettingsPane: View {
+    @Environment(AppState.self) private var state
+
+    private var repositoryURL: URL? {
+        UpdateChecker.repository.flatMap { URL(string: "https://github.com/\($0)") }
+    }
+
+    var body: some View {
+        Form {
+            Section {
+                HStack(spacing: 16) {
+                    Image(nsImage: NSApp.applicationIconImage)
+                        .resizable()
+                        .frame(width: 72, height: 72)
+                        .accessibilityHidden(true)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Quill").font(.title.weight(.bold))
+                        Text("Version \(UpdateChecker.currentVersion)")
+                            .foregroundStyle(.secondary)
+                        Text("System-wide text expander for macOS.")
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
+
+            Section("Library") {
+                LabeledContent("Snippets", value: state.store.snippets.count.formatted())
+                LabeledContent("Groups", value: state.store.groups.count.formatted())
+                LabeledContent("Keys saved", value: state.store.totalKeysSaved.formatted())
+                LabeledContent("Snippets file") {
+                    Button("Show in Finder") {
+                        NSWorkspace.shared.activateFileViewerSelecting([SnippetStore.fileURL])
+                    }
+                }
+            }
+
+            Section("Links") {
+                if let repositoryURL {
+                    Link(destination: repositoryURL) {
+                        Label("Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right")
+                    }
+                    Link(destination: repositoryURL.appending(path: "issues")) {
+                        Label("Report a Problem", systemImage: "exclamationmark.bubble")
+                    }
+                    Link(destination: repositoryURL.appending(path: "releases")) {
+                        Label("Release Notes", systemImage: "doc.text")
+                    }
+                }
+            }
+
+            Section {
+                Text("MIT licence. Your snippets and history stay on this Mac; the only network request is the daily update check against GitHub Releases.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
     }
 }

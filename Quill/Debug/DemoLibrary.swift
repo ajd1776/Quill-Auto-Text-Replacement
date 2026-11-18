@@ -4,6 +4,13 @@ import Foundation
 /// Made-up snippets for screenshots (run with -QuillDemoData). Never saved.
 @MainActor
 enum DemoLibrary {
+    /// Made-up data instead of the real library: for screenshots (-QuillDemoData) and whenever
+    /// the app is hosting unit tests, so tests never read or write the real snippets file.
+    nonisolated static var isActive: Bool {
+        CommandLine.arguments.contains("-QuillDemoData")
+            || ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil
+    }
+
     /// Built once, so History entries point at the same snippets the library shows.
     private static var cached: QuillLibrary?
 
@@ -23,8 +30,9 @@ enum DemoLibrary {
         code.isExpanded = true
 
         func snippet(_ trigger: String, _ text: String, _ group: SnippetGroup?, uses: Int, symbol: String? = nil,
-                     mode: ExpansionMode = .afterDelimiter, anyCase: Bool = false) -> Snippet {
+                     mode: ExpansionMode = .afterDelimiter, anyCase: Bool = false, age: Double = 40) -> Snippet {
             var s = Snippet(trigger: trigger, expansion: text)
+            s.created = Date().addingTimeInterval(-age * 86_400)
             s.groupID = group?.id
             s.useCount = uses
             s.lastUsed = uses > 0 ? Date().addingTimeInterval(-Double(uses) * 900) : nil
@@ -45,6 +53,8 @@ enum DemoLibrary {
             snippet(";date", "{date}", nil, uses: 33, symbol: "calendar", mode: .immediate),
             snippet("clog", "console.log({cursor})", code, uses: 14),
             snippet("todo", "// TODO: {cursor}", code, uses: 6),
+            snippet("brb", "be right back", personal, uses: 0, age: 30),
+            snippet("vat", "VAT number: GB 123 4567 89", shop, uses: 0, age: 21),
         ]
 
         var daily: [String: Int] = [:]
@@ -60,15 +70,22 @@ enum DemoLibrary {
         let library = make()
         let apps: [(String, String)] = [("Mail", "com.apple.mail"), ("Safari", "com.apple.Safari"), ("Notes", "com.apple.Notes"),
                                         ("Messages", "com.apple.MobileSMS"), ("Xcode", "com.apple.dt.Xcode")]
-        let picks = ["eml", "sig", "thx", "addr", "clog", "omw", ";date", "eml", "sigw", "ret", "eml", "sig"]
-        return picks.enumerated().compactMap { index, trigger in
+        let base = ["eml", "sig", "thx", "addr", "clog", "omw", ";date", "eml", "sigw", "ret", "eml", "sig", "thx", "eml", "clog"]
+        let picks = (0..<4).flatMap { _ in base }
+        let hours = [9, 10, 10, 11, 11, 11, 12, 14, 14, 15, 15, 16, 17, 9, 13]
+        let calendar = Calendar.current
+        let entries: [HistoryEntry] = picks.enumerated().compactMap { index, trigger in
             guard let snippet = library.snippets.first(where: { $0.trigger == trigger }) else { return nil }
             let app = apps[index % apps.count]
             var text = TokenRenderer.render(snippet.expansion, inputs: ["Name": "Sam", "Order": "#1042"], clipboard: "").text
             text = text.replacingOccurrences(of: "\n", with: " ")
-            return HistoryEntry(date: Date().addingTimeInterval(-Double(index) * 2_700 - 120), snippetID: snippet.id,
+            let day = calendar.date(byAdding: .day, value: -(index / base.count), to: Date()) ?? Date()
+            var date = calendar.date(bySettingHour: hours[index % hours.count], minute: (index * 7) % 60, second: 0, of: day) ?? day
+            if date > Date() { date = Date().addingTimeInterval(-Double(index) * 300) }
+            return HistoryEntry(date: date, snippetID: snippet.id,
                                 trigger: trigger, text: text, appName: app.0, bundleID: app.1)
         }
+        return entries.sorted { $0.date > $1.date }
     }
 }
 #endif

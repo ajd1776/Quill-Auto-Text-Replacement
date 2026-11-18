@@ -9,6 +9,10 @@ struct AnimationPreview: View {
     let expansion: String
     /// True when Reduce Motion is on and the person hasn't chosen to play animations anyway.
     let reduceMotion: Bool
+    /// Room above the field for effects that rise off the text.
+    var height: CGFloat = 150
+    /// Text before the shortcut in the mock field.
+    var prefix = "Email me at "
 
     @State private var shown = ""
     @State private var effect: ReplacementAnimation?
@@ -23,7 +27,7 @@ struct AnimationPreview: View {
             VStack(spacing: 0) {
                 Spacer(minLength: 0)
                 HStack(spacing: 0) {
-                    Text("Email me at ")
+                    Text(prefix)
                         .foregroundStyle(.secondary)
                     Text(shown)
                         .lineLimit(1)
@@ -56,7 +60,7 @@ struct AnimationPreview: View {
             }
         }
         .coordinateSpace(.named(Self.space))
-        .frame(height: 150)
+        .frame(height: height)
         .overlay(alignment: .topTrailing) {
             Button("Replay Preview", systemImage: "arrow.counterclockwise", action: play)
                 .labelStyle(.iconOnly)

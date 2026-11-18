@@ -137,7 +137,7 @@ struct MenuBarPanel: View {
                 .renderingMode(.template)
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
-                .background(statusColor.gradient, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(statusColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Quill").font(.headline)
@@ -366,7 +366,7 @@ private struct Chip: View {
                 .padding(.horizontal, 10)
                 .padding(.vertical, 4)
                 .foregroundStyle(isSelected ? .white : .primary)
-                .background(isSelected ? AnyShapeStyle(color.gradient) : AnyShapeStyle(.quaternary.opacity(0.6)), in: Capsule())
+                .background(isSelected ? AnyShapeStyle(color) : AnyShapeStyle(.quaternary.opacity(0.6)), in: Capsule())
                 .contentShape(Capsule())
         }
         .buttonStyle(.plain)

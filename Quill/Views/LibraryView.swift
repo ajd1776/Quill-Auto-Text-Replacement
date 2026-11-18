@@ -209,6 +209,13 @@ struct SnippetsPage: View {
             .safeAreaInset(edge: .top, spacing: 0) {
                 ScopeHeader(count: snippets.count)
             }
+            .safeAreaInset(edge: .bottom, spacing: 0) {
+                if state.selectedSnippetIDs.count > 1 {
+                    BulkActionsBar(ids: state.selectedSnippetIDs, onDelete: delete)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+            .animation(.snappy(duration: 0.25), value: state.selectedSnippetIDs.count > 1)
             .frame(minWidth: 460)
             .navigationTitle(state.title(for: state.scope))
             .toolbar(removing: .title)
@@ -216,7 +223,11 @@ struct SnippetsPage: View {
         .searchable(text: $searchText, placement: .toolbar, prompt: "Search Snippets")
         .inspector(isPresented: Binding(
             get: { editedSnippetID != nil },
-            set: { if !$0 { state.selection = [] } }
+            // Only closing the inspector by hand deselects. It also closes by itself when a second
+            // snippet is selected, and that must keep the multi-selection for the bulk actions bar.
+            set: { isShown in
+                if !isShown, state.selectedSnippetIDs.count == 1 { state.selection = [] }
+            }
         )) {
             Group {
                 if let id = editedSnippetID, let binding = store.binding(for: id) {
@@ -224,7 +235,7 @@ struct SnippetsPage: View {
                         .id(id)
                 }
             }
-            .inspectorColumnWidth(min: 360, ideal: 400, max: 640)
+            .inspectorColumnWidth(min: 380, ideal: 430, max: 640)
         }
         .onDeleteCommand { delete(state.selectedSnippetIDs) }
         .toolbar {
@@ -359,6 +370,75 @@ private struct ScopeHeader: View {
         .padding(.top, 10)
         .padding(.bottom, 8)
         .background(.bar)
+    }
+}
+
+/// Shown under the list when several snippets are selected.
+private struct BulkActionsBar: View {
+    let ids: Set<Snippet.ID>
+    let onDelete: (Set<Snippet.ID>) -> Void
+    @Environment(AppState.self) private var state
+
+    private var store: SnippetStore { state.store }
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text("\(ids.count) Selected")
+                .font(.headline)
+                .monospacedDigit()
+            Button("Clear", action: { state.selection = [] })
+                .buttonStyle(.link)
+                .accessibilityIdentifier("bulk-clear")
+
+            Spacer(minLength: 8)
+
+            Button("Turn On", systemImage: "play.circle") {
+                for id in ids { store.setEnabled(id, true) }
+            }
+            .accessibilityIdentifier("bulk-on")
+            Button("Turn Off", systemImage: "pause.circle") {
+                for id in ids { store.setEnabled(id, false) }
+            }
+            .accessibilityIdentifier("bulk-off")
+
+            Menu {
+                Button("No Group") { store.move(ids, to: nil) }
+                if !store.groups.isEmpty { Divider() }
+                ForEach(store.groups) { group in
+                    Button(group.name) { store.move(ids, to: group.id) }
+                }
+            } label: {
+                Label("Move To", systemImage: "folder")
+            }
+            .fixedSize()
+            .accessibilityIdentifier("bulk-move")
+
+            Menu {
+                Button("Default (\(state.defaultAnimation.title))") { setEffect(nil) }
+                Divider()
+                ForEach(ReplacementAnimation.allCases) { style in
+                    Button(style.title, systemImage: style.symbol) { setEffect(style) }
+                }
+            } label: {
+                Label("Effect", systemImage: "sparkles")
+            }
+            .fixedSize()
+
+            Button("Delete", systemImage: "trash", role: .destructive) { onDelete(ids) }
+                .accessibilityIdentifier("bulk-delete")
+        }
+        .labelStyle(.titleAndIcon)
+        .controlSize(.regular)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .background(.bar)
+        .overlay(alignment: .top) { Divider() }
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("bulk-bar")
+    }
+
+    private func setEffect(_ style: ReplacementAnimation?) {
+        for id in ids { store.update(id) { $0.animation = style } }
     }
 }
 
@@ -610,17 +690,17 @@ private struct SnippetCard: View {
         .background {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color(nsColor: .windowBackgroundColor))
-                .shadow(color: .black.opacity(isHovering ? 0.18 : 0.08), radius: isHovering ? 8 : 3, y: isHovering ? 3 : 1)
         }
         .overlay {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isSelected ? 2.5 : 1)
+                .strokeBorder(isSelected ? Color.accentColor : Color.primary.opacity(isHovering ? 0.25 : 0.1), lineWidth: isSelected ? 2.5 : 1)
         }
         .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         .onHover { isHovering = $0 }
         .animation(.easeOut(duration: 0.15), value: isHovering)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityIdentifier("card-\(snippet.trigger)")
     }
 }
 
@@ -718,6 +798,7 @@ struct SettingsPage: View {
                     case .effects: EffectsSettingsPane()
                     case .shortcuts: ShortcutSettingsPane()
                     case .backup: BackupSettingsPane()
+                    case .about: AboutSettingsPane()
                     }
                 }
                 .frame(maxWidth: 640)
@@ -752,12 +833,7 @@ struct SnippetIcon: View {
         .frame(width: size, height: size)
         .background {
             RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(LinearGradient(colors: [fill.opacity(0.85), fill], startPoint: .top, endPoint: .bottom))
-                .shadow(color: fill.opacity(0.35), radius: size * 0.12, y: size * 0.05)
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .strokeBorder(.white.opacity(0.18), lineWidth: 0.5)
+                .fill(fill)
         }
         .accessibilityHidden(true)
     }

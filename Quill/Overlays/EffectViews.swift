@@ -104,19 +104,9 @@ private struct GlowEffect: View {
         EffectClock { time in
             let fadeIn = progress(time, from: 0, over: 0.15)
             let fadeOut = progress(time, from: 0.65, over: 0.5)
-            let sweep = reduceMotion ? 0.5 : easeOut(progress(time, from: 0, over: 0.7)) * 1.6 - 0.3
             RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Color.accentColor.opacity(0.14))
-                .overlay {
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(LinearGradient(
-                            colors: [.accentColor.opacity(0), .accentColor.opacity(0.5), .accentColor.opacity(0)],
-                            startPoint: UnitPoint(x: sweep - 0.35, y: 0.5),
-                            endPoint: UnitPoint(x: sweep + 0.35, y: 0.5)
-                        ))
-                }
+                .fill(Color.accentColor.opacity(0.28))
                 .frame(width: line.width + 10, height: line.height + 6)
-                .shadow(color: .accentColor.opacity(0.55), radius: 10)
                 .opacity(fadeIn * (1 - fadeOut))
                 .position(x: line.midX, y: line.midY)
         }
@@ -317,18 +307,13 @@ private struct CyberDecodeEffect: View {
             Text(shown)
                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
                 .foregroundStyle(Color.cyan)
-                .shadow(color: .cyan.opacity(0.8), radius: 4)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 7)
                 .background(Color.black.opacity(0.82), in: Capsule())
                 .overlay {
                     Capsule()
-                        .strokeBorder(
-                            LinearGradient(colors: [.cyan, .pink], startPoint: .leading, endPoint: .trailing),
-                            lineWidth: 1.5
-                        )
+                        .strokeBorder(Color.cyan, lineWidth: 1.5)
                 }
-                .shadow(color: .pink.opacity(0.45), radius: 10)
                 .opacity((time < 0.12 ? time / 0.12 : 1) * (1 - fadeOut))
         }
     }

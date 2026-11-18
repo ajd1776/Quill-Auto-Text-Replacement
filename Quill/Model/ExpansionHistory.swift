@@ -28,7 +28,7 @@ final class ExpansionHistory {
 
     init() {
         #if DEBUG
-        if CommandLine.arguments.contains("-QuillDemoData") {
+        if DemoLibrary.isActive {
             entries = DemoLibrary.history()
             isReadOnly = true
             return

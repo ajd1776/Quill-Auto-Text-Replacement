@@ -85,6 +85,7 @@ private struct MenuBarLabel: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             switch demo {
             case "library":
+                UserDefaults.standard.set("list", forKey: "snippetLayout")
                 openWindow(id: WindowID.library)
             case "grid":
                 UserDefaults.standard.set("grid", forKey: "snippetLayout")
@@ -109,7 +110,9 @@ private struct MenuBarLabel: View {
                 if let pick = snippets.first(where: { $0.trigger == "thx" || $0.trigger == "eAD" }) ?? snippets.first {
                     state.selection = [.snippet(pick.id)]
                 }
-            case "general", "suggestions", "effects", "shortcuts", "backup":
+            case "welcome":
+                openWindow(id: WindowID.welcome)
+            case "general", "suggestions", "effects", "shortcuts", "backup", "about":
                 UserDefaults.standard.set(demo, forKey: "settingsPane")
                 state.page = .settings
                 openWindow(id: WindowID.library)

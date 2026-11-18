@@ -351,8 +351,7 @@ private final class StageWindow: NSWindow {
 /// A plain backdrop with one document window on it.
 private struct StageBackdrop: View {
     var body: some View {
-        LinearGradient(colors: [Color(red: 0.16, green: 0.12, blue: 0.36), Color(red: 0.42, green: 0.22, blue: 0.62), Color(red: 0.86, green: 0.48, blue: 0.62)],
-                       startPoint: .topLeading, endPoint: .bottomTrailing)
+        Color(nsColor: .systemIndigo)
     }
 }
 
@@ -381,7 +380,7 @@ private struct StageView: View {
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.12)))
-            .shadow(color: .black.opacity(0.35), radius: 24, y: 10)
+            .shadow(color: .black.opacity(0.25), radius: 20, y: 8)
             .padding(.horizontal, 110)
             .padding(.top, 44)
             .padding(.bottom, 40)
