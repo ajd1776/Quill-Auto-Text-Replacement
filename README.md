@@ -17,6 +17,7 @@ System-wide text expander for macOS. Type a shortcut, get the full text. Native 
 - **Starter packs**: Emoji Shortcodes (`:fire:` → 🔥), Typo Fixes (`teh` → `the`), Dates and Times (`;dmy` → `18/11/2026`). Each installs as a removable group.
 - **History**: recent expansions with snippet, app and time. Local only, can be turned off.
 - **Icons**: any SF Symbol or emoji for groups and snippets.
+- **Update check**: checks GitHub Releases daily (or via Quill › Check for Updates…) and shows a banner and menu item when a newer version is out. Download, skip or remind later. Configure the repo with `QuillUpdateRepository` in `Config/Info.plist`.
 - **Shortcuts app**: Turn Quill On/Off, Get Snippet Text, Insert Snippet, Add Snippet.
 - **Data**: local JSON, daily backups (last 7), JSON export/import, import from macOS Text Replacements. Usage stats per snippet and per day.
 
@@ -87,6 +88,7 @@ build.noindex/Build/Products/Debug/Quill.app/Contents/MacOS/Quill -QuillSelfTest
 Debug-only launch arguments:
 
 - `-QuillDemoData`: in-memory sample library, never saved.
+- `-QuillUpdateCheck`: one live update check, prints the result and quits. `-QuillFakeUpdate` simulates an available update.
 - `-QuillDemo <view>`: opens `overview`, `editor`, `palette`, a settings pane, `bubble`, `fillin`, or plays an effect by name.
 
 ## How it works

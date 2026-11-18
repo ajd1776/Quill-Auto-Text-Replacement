@@ -36,6 +36,9 @@ struct CommandPalette: View {
             Item(id: "importMac", title: "Import Text Replacements from macOS", subtitle: "File menu", symbol: "square.and.arrow.down", color: .gray) { state.beginSystemImport() },
             Item(id: "import", title: "Import Snippets…", subtitle: "⇧⌘I", symbol: "tray.and.arrow.down", color: .gray) { state.isShowingFileImporter = true },
             Item(id: "export", title: "Export Snippets…", subtitle: "⇧⌘E", symbol: "tray.and.arrow.up", color: .gray) { state.exportLibrary() },
+            Item(id: "updates", title: "Check for Updates…", subtitle: "Quill \(UpdateChecker.currentVersion)", symbol: "arrow.down.circle", color: .blue) {
+                Task { await state.updates.check(manual: true) }
+            },
             Item(id: "settings", title: "Settings…", subtitle: "⌘,", symbol: "gearshape", color: .gray) { openSettings() },
         ]
         for order in SnippetSortOrder.allCases where order != state.sortOrder {

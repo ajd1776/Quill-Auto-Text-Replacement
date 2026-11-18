@@ -2,10 +2,11 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- Quill runs with no windows open, so macOS must never quit it to save memory. -->
 	<key>NSSupportsAutomaticTermination</key>
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>QuillUpdateRepository</key>
+	<string>ajd1776/Quill-Auto-Text-Replacement</string>
 </dict>
 </plist>

@@ -179,7 +179,7 @@ enum EngineSelfTest {
         return failures == 0 && modelFailures == 0
     }
 
-    private static let modelChecks = 14
+    private static let modelChecks = 20
 
     /// Data checks on in-memory values only; never touches the real snippets file.
     private static func runModelChecks() -> Int {
@@ -228,6 +228,15 @@ enum EngineSelfTest {
         check("emoji icons are recognised", IconKind.isEmoji("😄") && IconKind.isEmoji("❤️") && IconKind.isEmoji("🇬🇧"))
         check("symbol names aren't emoji", !IconKind.isEmoji("folder.fill") && !IconKind.isEmoji("a") && !IconKind.isEmoji("1"))
         check("starter packs have unique shortcuts", StarterPack.all.allSatisfy { Set($0.entries.map(\.trigger)).count == $0.entries.count })
+
+        check("1.10 is newer than 1.9", UpdateChecker.isVersion("1.10", newerThan: "1.9"))
+        check("1.1 equals 1.1.0", !UpdateChecker.isVersion("1.1.0", newerThan: "1.1") && !UpdateChecker.isVersion("1.1", newerThan: "1.1.0"))
+        check("older isn't newer", !UpdateChecker.isVersion("1.0", newerThan: "1.1"))
+        check("2.0 beats 1.99.9", UpdateChecker.isVersion("2.0", newerThan: "1.99.9"))
+        let sample = ###"{"tag_name":"v1.2.0","name":"Quill 1.2","body":"## New","html_url":"https://example.com/r","published_at":"2026-11-20T10:00:00Z","assets":[{"name":"notes.txt","browser_download_url":"https://example.com/n"},{"name":"Quill-1.2.dmg","browser_download_url":"https://example.com/q.dmg"}]}"###
+        let parsed = try? UpdateChecker.parse(Data(sample.utf8))
+        check("release parses, v stripped, DMG found", parsed?.version == "1.2.0" && parsed?.downloadURL?.absoluteString == "https://example.com/q.dmg")
+        check("release without a DMG falls back to its page", (try? UpdateChecker.parse(Data(#"{"tag_name":"1.3","html_url":"https://example.com/p","assets":[]}"#.utf8)))?.downloadURL == nil)
 
         let sorted = [Snippet(trigger: "b", expansion: "1"), Snippet(trigger: "", expansion: "2"), Snippet(trigger: "a", expansion: "3")]
             .sorted(by: SnippetSortOrder.shortcut.areInIncreasingOrder)

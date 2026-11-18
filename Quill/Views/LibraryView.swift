@@ -37,6 +37,15 @@ struct LibraryView: View {
         // Without a minimum, macOS can restore the window at a uselessly small size.
         .frame(minWidth: 900, minHeight: 600)
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
+        .sheet(isPresented: Binding(
+            get: { state.updates.isShowingDetails && state.updates.availableUpdate != nil },
+            set: { state.updates.isShowingDetails = $0 }
+        )) {
+            if let update = state.updates.availableUpdate {
+                UpdateSheet(release: update)
+                    .environment(state)
+            }
+        }
         .sheet(isPresented: $state.isShowingPacks) {
             PackGallery()
                 .environment(state)
@@ -120,6 +129,11 @@ struct LibraryView: View {
         return List(selection: $state.selection) {
             if state.status == .needsAccess {
                 AccessCallout()
+                    .listRowSeparator(.hidden)
+            }
+
+            if let update = state.updates.availableUpdate {
+                UpdateBanner(release: update)
                     .listRowSeparator(.hidden)
             }
 

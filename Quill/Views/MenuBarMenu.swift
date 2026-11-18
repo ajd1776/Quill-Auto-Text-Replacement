@@ -11,6 +11,14 @@ struct MenuBarMenu: View {
     var body: some View {
         @Bindable var state = state
 
+        if let update = state.updates.availableUpdate {
+            Button("Quill \(update.version) Is Available…") {
+                openLibrary()
+                state.updates.isShowingDetails = true
+            }
+            Divider()
+        }
+
         Text(statusTitle)
 
         if state.status == .needsAccess {

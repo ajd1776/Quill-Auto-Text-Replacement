@@ -99,6 +99,9 @@ private struct MenuBarLabel: View {
                 if let group = state.store.groups.first {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.iconPickerTarget = .group(group.id) }
                 }
+            case "update":
+                openWindow(id: WindowID.library)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.updates.isShowingDetails = true }
             case "palette":
                 openWindow(id: WindowID.library)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.isShowingPalette = true }
@@ -146,6 +149,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             #if DEBUG
             if CommandLine.arguments.contains("-QuillSelfTest") {
                 exit(EngineSelfTest.run() ? 0 : 1)
+            }
+            // Runs one real update check against GitHub, prints the outcome and quits.
+            if CommandLine.arguments.contains("-QuillUpdateCheck") {
+                Task { @MainActor in
+                    let updates = AppState.shared.updates
+                    await updates.check(manual: true)
+                    print("current \(UpdateChecker.currentVersion) → \(updates.status)")
+                    exit(0)
+                }
             }
             #endif
             AppState.shared.updateActivationPolicy()

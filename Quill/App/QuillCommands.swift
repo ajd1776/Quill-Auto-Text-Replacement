@@ -6,6 +6,13 @@ struct QuillCommands: Commands {
     @Environment(\.openWindow) private var openWindow
 
     var body: some Commands {
+        CommandGroup(after: .appInfo) {
+            Button("Check for Updates…") {
+                showLibrary()
+                Task { await state.updates.check(manual: true) }
+            }
+        }
+
         CommandGroup(after: .appSettings) {
             Toggle("Expand Snippets", isOn: Binding(
                 get: { state.isOn },

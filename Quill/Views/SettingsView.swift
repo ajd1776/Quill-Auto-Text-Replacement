@@ -99,6 +99,8 @@ private struct GeneralSettingsPane: View {
                 FooterText("Quill never expands or suggests in these apps. You can also pause the app you're using from the menu bar.")
             }
 
+            UpdateSettingsSection()
+
             Section {
                 LabeledContent("Accessibility") {
                     if state.isTrusted {

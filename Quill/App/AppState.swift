@@ -24,6 +24,7 @@ final class AppState {
 
     let store = SnippetStore()
     let history = ExpansionHistory()
+    let updates = UpdateChecker()
     private let engine = ExpansionEngine.shared
     @ObservationIgnored private let defaults = UserDefaults.standard
 
