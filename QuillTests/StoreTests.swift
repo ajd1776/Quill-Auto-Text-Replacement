@@ -134,20 +134,23 @@ final class ScopeTests: XCTestCase {
         XCTAssertEqual(state.title(for: .all), "All Snippets")
     }
 
-    func testPagesRouting() {
+    func testSidebarSelectionDrivesThePage() {
         let state = AppState.shared
         state.selection = [.history]
         XCTAssertEqual(state.page, .history)
-        XCTAssertTrue(state.selection.isEmpty)
         state.selection = [.overview]
         XCTAssertEqual(state.page, .stats)
         if let snippet = state.store.snippets.first {
-            state.scope = .disabled
             state.selection = [.snippet(snippet.id)]
             XCTAssertEqual(state.page, .snippets)
-            XCTAssertTrue(state.snippets(in: state.scope).contains { $0.id == snippet.id }, "Selecting a hidden snippet shows it")
+            XCTAssertEqual(state.selectedSnippetIDs, [snippet.id])
         }
-        state.selection = []
+        state.page = .history
+        XCTAssertEqual(state.selection, [.history], "Setting the page selects it in the sidebar")
+        state.page = .stats
+        XCTAssertEqual(state.selection, [.overview])
+        state.page = .snippets
+        XCTAssertTrue(state.selection.isEmpty)
     }
 }
 

@@ -13,14 +13,6 @@ struct QuillCommands: Commands {
             }
         }
 
-        CommandGroup(replacing: .appSettings) {
-            Button("Settings…") {
-                showLibrary()
-                state.page = .settings
-            }
-            .keyboardShortcut(",")
-        }
-
         CommandGroup(after: .appSettings) {
             Toggle("Expand Snippets", isOn: Binding(
                 get: { state.isOn },
@@ -88,13 +80,17 @@ struct QuillCommands: Commands {
             }
             .keyboardShortcut("k")
 
-            ForEach(Array(AppPage.allCases.enumerated()), id: \.element) { index, page in
-                Button("Show \(page.title)") {
-                    showLibrary()
-                    state.page = page
-                }
-                .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")))
+            Button("Show Stats") {
+                showLibrary()
+                state.page = .stats
             }
+            .keyboardShortcut("0")
+
+            Button("Show History") {
+                showLibrary()
+                state.page = .history
+            }
+            .keyboardShortcut("y")
 
             Picker("Sort By", selection: Binding(
                 get: { state.sortOrder },

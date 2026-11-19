@@ -12,7 +12,7 @@ struct QuillApp: App {
             LibraryView()
                 .environment(state)
         }
-        .defaultSize(width: 1320, height: 820)
+        .defaultSize(width: 1180, height: 760)
         .windowResizability(.contentMinSize)
         .defaultLaunchBehavior(hasCompletedWelcome && showsMenuBarExtra ? .suppressed : .presented)
         .commands {
@@ -60,6 +60,7 @@ private struct MenuBarLabel: View {
             .accessibilityLabel(state.status == .on ? "Quill, on" : "Quill, off")
             .onAppear {
                 state.openLibraryAction = { openWindow(id: WindowID.library) }
+                state.openSettingsAction = { openSettings() }
                 #if DEBUG
                 runDemoIfRequested()
                 #endif
@@ -79,16 +80,13 @@ private struct MenuBarLabel: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
             guard !demo.hasPrefix("stage:") else { return }
             for window in NSApp.windows where window.identifier?.rawValue.contains(WindowID.library) == true {
-                window.setFrame(NSRect(x: 160, y: 120, width: 1320, height: 820), display: true)
+                window.setFrame(NSRect(x: 160, y: 120, width: 1180, height: 760), display: true)
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
             switch demo {
             case "library":
-                UserDefaults.standard.set("list", forKey: "snippetLayout")
-                openWindow(id: WindowID.library)
-            case "grid":
-                UserDefaults.standard.set("grid", forKey: "snippetLayout")
+                state.selection = []
                 openWindow(id: WindowID.library)
             case "overview", "stats":
                 state.page = .stats
@@ -114,8 +112,7 @@ private struct MenuBarLabel: View {
                 openWindow(id: WindowID.welcome)
             case "general", "suggestions", "effects", "shortcuts", "backup", "about":
                 UserDefaults.standard.set(demo, forKey: "settingsPane")
-                state.page = .settings
-                openWindow(id: WindowID.library)
+                openSettings()
             case "history":
                 state.page = .history
                 openWindow(id: WindowID.library)

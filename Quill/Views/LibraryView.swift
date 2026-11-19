@@ -1,39 +1,42 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The main window. Toolbar tabs switch between Snippets, Stats, History and Settings.
+/// The main window: Overview and snippets (loose and in groups) in the sidebar,
+/// the dashboard or the selected snippet's editor beside them.
 struct LibraryView: View {
     @Environment(AppState.self) private var state
+    @Environment(\.undoManager) private var undoManager
+    @State private var searchText = ""
+    @AppStorage("ungroupedExpanded") private var ungroupedExpanded = true
     @State private var groupName = ""
 
     private var store: SnippetStore { state.store }
 
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespaces).isEmpty
+    }
+
+    private func visible(_ snippets: [Snippet]) -> [Snippet] {
+        let query = searchText.trimmingCharacters(in: .whitespaces)
+        let matching = query.isEmpty ? snippets : snippets.filter {
+            $0.trigger.localizedCaseInsensitiveContains(query)
+                || $0.expansion.localizedCaseInsensitiveContains(query)
+        }
+        return matching.sorted(by: state.sortOrder.areInIncreasingOrder)
+    }
+
     var body: some View {
         @Bindable var state = state
 
-        Group {
-            switch state.page {
-            case .snippets: SnippetsPage()
-            case .stats: OverviewView()
-            case .history: HistoryView()
-            case .settings: SettingsPage()
-            }
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 250, ideal: 300, max: 440)
+        } detail: {
+            detail
         }
         // Without a minimum, macOS can restore the window at a uselessly small size.
-        .frame(minWidth: 1180, minHeight: 640)
-        .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("Page", selection: $state.page) {
-                    ForEach(AppPage.allCases) { page in
-                        Text(page.title).tag(page)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .fixedSize()
-                .help("Switch Page")
-            }
-        }
+        .frame(minWidth: 900, minHeight: 600)
+        .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
         .sheet(isPresented: Binding(
             get: { state.updates.isShowingDetails && state.updates.availableUpdate != nil },
             set: { state.updates.isShowingDetails = $0 }
@@ -109,13 +112,9 @@ struct LibraryView: View {
             titleVisibility: .visible
         ) {
             if let id = state.deletingGroupID {
-                Button("Keep Snippets") {
-                    store.deleteGroup(id, keepingSnippets: true)
-                    state.scope = .all
-                }
+                Button("Keep Snippets") { store.deleteGroup(id, keepingSnippets: true) }
                 Button("Delete Group and Snippets", role: .destructive) {
                     store.deleteGroup(id, keepingSnippets: false)
-                    state.scope = .all
                 }
                 Button("Cancel", role: .cancel) {}
             }
@@ -128,6 +127,175 @@ struct LibraryView: View {
     private var deletingGroupTitle: String {
         let name = state.deletingGroupID.flatMap(store.group)?.name ?? "Group"
         return "Delete \u{201C}\(name)\u{201D}?"
+    }
+
+    // MARK: Sidebar
+
+    private var sidebar: some View {
+        @Bindable var state = state
+        let loose = visible(store.snippets(in: nil))
+
+        return List(selection: $state.selection) {
+            if state.status == .needsAccess {
+                AccessCallout()
+                    .listRowSeparator(.hidden)
+            }
+
+            if let update = state.updates.availableUpdate {
+                UpdateBanner(release: update)
+                    .listRowSeparator(.hidden)
+            }
+
+            if !isSearching {
+                SidebarLink(title: "Stats", symbol: "chart.bar.xaxis", color: .purple)
+                    .tag(SidebarItem.overview)
+                SidebarLink(title: "History", symbol: "clock.arrow.circlepath", color: .teal,
+                            badge: state.history.entries.isEmpty ? nil : "\(state.history.entries.count)")
+                    .tag(SidebarItem.history)
+            }
+
+            // Collapsing is done with our own larger arrow, so sections are plain and rows are skipped when collapsed.
+            if !loose.isEmpty || store.groups.isEmpty {
+                Section {
+                    if ungroupedExpanded || isSearching { rows(for: loose) }
+                } header: {
+                    DropHeader(groupID: nil) {
+                        HStack(spacing: 8) {
+                            DisclosureArrow(isExpanded: $ungroupedExpanded)
+                            Text(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                                .font(.subheadline.weight(.semibold))
+                            CountBadge(count: store.snippets(in: nil).count, color: .secondary)
+                            Spacer()
+                        }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                        .accessibilityValue(ungroupedExpanded ? "expanded" : "collapsed")
+                        .accessibilityAddTraits(.isHeader)
+                        .accessibilityAction(named: ungroupedExpanded ? "Collapse" : "Expand") { ungroupedExpanded.toggle() }
+                    }
+                }
+            }
+
+            ForEach(store.groups) { group in
+                let snippets = visible(store.snippets(in: group.id))
+                if !isSearching || !snippets.isEmpty {
+                    Section {
+                        if group.isExpanded || isSearching { rows(for: snippets) }
+                    } header: {
+                        DropHeader(groupID: group.id) {
+                            GroupHeader(group: group, count: store.snippets(in: group.id).count)
+                        }
+                    }
+                }
+            }
+        }
+        .listStyle(.sidebar)
+        .overlay {
+            if store.snippets.isEmpty {
+                ContentUnavailableView {
+                    Label("No Snippets", systemImage: "pencil.line")
+                } description: {
+                    Text("Create a snippet, or bring in the text replacements you already use.")
+                } actions: {
+                    Button("New Snippet") { state.newSnippet() }
+                    Button("Import from macOS") { state.beginSystemImport() }
+                }
+            } else if isSearching, store.snippets.allSatisfy({ visible([$0]).isEmpty }) {
+                ContentUnavailableView.search(text: searchText)
+            }
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            if !store.snippets.isEmpty {
+                SidebarSummary(count: store.snippets.count, keysSaved: store.totalKeysSaved, sortOrder: $state.sortOrder)
+            }
+        }
+        .onDeleteCommand {
+            delete(state.selectedSnippetIDs)
+        }
+        .toolbar {
+            ToolbarItemGroup {
+                // A split button: click for a new snippet, or open the arrow for a new group.
+                Menu {
+                    Button("New Snippet", systemImage: "square.and.pencil") {
+                        searchText = ""
+                        state.newSnippet()
+                    }
+                    Button("New Group", systemImage: "folder.badge.plus") {
+                        state.newGroup()
+                    }
+                    Divider()
+                    Button("Add Starter Pack…", systemImage: "shippingbox") {
+                        state.isShowingPacks = true
+                    }
+                } label: {
+                    Label("New Snippet", systemImage: "square.and.pencil")
+                } primaryAction: {
+                    searchText = ""
+                    state.newSnippet()
+                }
+                .help("New Snippet, or open the menu for a new group")
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func rows(for snippets: [Snippet]) -> some View {
+        ForEach(snippets) { snippet in
+            SnippetRow(
+                snippet: snippet,
+                group: store.group(for: snippet),
+                isEnabled: store.enabledBinding(for: snippet.id),
+                hasProblem: store.problem(with: snippet) != nil
+            )
+            .tag(SidebarItem.snippet(snippet.id))
+            .draggable(SnippetDrag.payload(for: snippet.id)) {
+                Label(snippet.trigger.isEmpty ? "Snippet" : snippet.trigger, systemImage: "text.quote")
+                    .padding(6)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+            }
+            .contextMenu {
+                SnippetActionsMenu(ids: contextIDs(for: snippet), onDelete: delete)
+            }
+        }
+    }
+
+    // MARK: Detail
+
+    @ViewBuilder
+    private var detail: some View {
+        let ids = state.selectedSnippetIDs
+        if ids.count == 1, let id = ids.first, let binding = store.binding(for: id) {
+            SnippetDetailView(snippet: binding) {
+                delete([id])
+            }
+            .id(id)
+        } else if ids.count > 1 {
+            ContentUnavailableView {
+                Label("\(ids.count) Snippets Selected", systemImage: "square.stack")
+            } description: {
+                Text("Turn them on or off, move them to a group, or right-click for more.")
+            } actions: {
+                let allOn = ids.compactMap(store.snippet).allSatisfy(\.isEnabled)
+                Button(allOn ? "Turn Off" : "Turn On") {
+                    for id in ids { store.setEnabled(id, !allOn) }
+                }
+                Menu("Move to Group") {
+                    Button("No Group") { store.move(ids, to: nil) }
+                    if !store.groups.isEmpty { Divider() }
+                    ForEach(store.groups) { group in
+                        Button(group.name) { store.move(ids, to: group.id) }
+                    }
+                }
+                .fixedSize()
+                Button("Delete \(ids.count) Snippets", role: .destructive) {
+                    delete(ids)
+                }
+            }
+        } else if state.selection == [.history] {
+            HistoryView()
+        } else {
+            OverviewView()
+        }
     }
 
     @ViewBuilder
@@ -146,369 +314,68 @@ struct LibraryView: View {
             }
         }
     }
-}
 
-// MARK: - Snippets page
+    // MARK: Actions
 
-/// Filters and groups in the sidebar, snippets as a list or grid, the editor in an inspector.
-struct SnippetsPage: View {
-    @Environment(AppState.self) private var state
-    @Environment(\.undoManager) private var undoManager
-    @State private var searchText = ""
-    @AppStorage("snippetLayout") private var layout: SnippetLayout = .list
-
-    private var store: SnippetStore { state.store }
-
-    private var visibleSnippets: [Snippet] {
-        let query = searchText.trimmingCharacters(in: .whitespaces)
-        let scoped = state.snippets(in: state.scope)
-        let matching = query.isEmpty ? scoped : scoped.filter {
-            $0.trigger.localizedCaseInsensitiveContains(query) || $0.expansion.localizedCaseInsensitiveContains(query)
-        }
-        let order: SnippetSortOrder = state.scope == .recent ? .recentlyUsed : state.sortOrder
-        return matching.sorted(by: order.areInIncreasingOrder)
-    }
-
-    private var editedSnippetID: Snippet.ID? {
-        state.selectedSnippetIDs.count == 1 ? state.selectedSnippetIDs.first : nil
-    }
-
-    var body: some View {
-        @Bindable var state = state
-        let snippets = visibleSnippets
-
-        NavigationSplitView {
-            SnippetsSidebar()
-                .navigationSplitViewColumnWidth(min: 220, ideal: 250, max: 340)
-        } detail: {
-            Group {
-                if store.snippets.isEmpty {
-                    ContentUnavailableView {
-                        Label("No Snippets", systemImage: "text.quote")
-                    } description: {
-                        Text("Create a snippet, add a starter pack, or bring in the text replacements you already use.")
-                    } actions: {
-                        Button("New Snippet") { state.newSnippet() }
-                            .primaryActionStyle()
-                        Button("Add Starter Pack…") { state.isShowingPacks = true }
-                        Button("Import from macOS") { state.beginSystemImport() }
-                    }
-                } else if snippets.isEmpty {
-                    if searchText.isEmpty {
-                        ContentUnavailableView("Nothing Here", systemImage: "tray",
-                                               description: Text("No snippets match \u{201C}\(state.title(for: state.scope))\u{201D}."))
-                    } else {
-                        ContentUnavailableView.search(text: searchText)
-                    }
-                } else if layout == .grid {
-                    SnippetGrid(snippets: snippets, onDelete: delete)
-                } else {
-                    SnippetList(snippets: snippets, onDelete: delete)
-                }
-            }
-            .safeAreaInset(edge: .top, spacing: 0) {
-                ScopeHeader(count: snippets.count)
-            }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if state.selectedSnippetIDs.count > 1 {
-                    BulkActionsBar(ids: state.selectedSnippetIDs, onDelete: delete)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
-            .animation(.snappy(duration: 0.25), value: state.selectedSnippetIDs.count > 1)
-            .frame(minWidth: 460)
-            .navigationTitle(state.title(for: state.scope))
-            .toolbar(removing: .title)
-        }
-        .searchable(text: $searchText, placement: .toolbar, prompt: "Search Snippets")
-        .inspector(isPresented: Binding(
-            get: { editedSnippetID != nil },
-            // Only closing the inspector by hand deselects. It also closes by itself when a second
-            // snippet is selected, and that must keep the multi-selection for the bulk actions bar.
-            set: { isShown in
-                if !isShown, state.selectedSnippetIDs.count == 1 { state.selection = [] }
-            }
-        )) {
-            Group {
-                if let id = editedSnippetID, let binding = store.binding(for: id) {
-                    SnippetDetailView(snippet: binding) { delete([id]) }
-                        .id(id)
-                }
-            }
-            .inspectorColumnWidth(min: 380, ideal: 430, max: 640)
-        }
-        .onDeleteCommand { delete(state.selectedSnippetIDs) }
-        .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Menu {
-                    Picker("View As", selection: $layout) {
-                        Label("List", systemImage: "list.bullet").tag(SnippetLayout.list)
-                        Label("Grid", systemImage: "square.grid.2x2").tag(SnippetLayout.grid)
-                    }
-                    .pickerStyle(.inline)
-                    Picker("Sort By", selection: $state.sortOrder) {
-                        ForEach(SnippetSortOrder.allCases) { Text($0.title).tag($0) }
-                    }
-                    .pickerStyle(.inline)
-                } label: {
-                    Label("View Options", systemImage: layout == .grid ? "square.grid.2x2" : "list.bullet")
-                }
-                .help("View as List or Grid, and Sort")
-
-                Menu {
-                    Button("New Snippet", systemImage: "square.and.pencil") { state.newSnippet() }
-                    Button("New Group", systemImage: "folder.badge.plus") { state.newGroup() }
-                    Divider()
-                    Button("Add Starter Pack…", systemImage: "shippingbox") { state.isShowingPacks = true }
-                    Button("Import Text Replacements…", systemImage: "square.and.arrow.down") { state.beginSystemImport() }
-                } label: {
-                    Label("New Snippet", systemImage: "plus")
-                } primaryAction: {
-                    searchText = ""
-                    state.newSnippet()
-                }
-                .help("New Snippet (open the menu for more)")
-            }
-        }
+    /// Right-clicking a selected row acts on the whole selection, like Finder.
+    private func contextIDs(for snippet: Snippet) -> Set<Snippet.ID> {
+        let selected = state.selectedSnippetIDs
+        return selected.contains(snippet.id) ? selected : [snippet.id]
     }
 
     private func delete(_ ids: Set<Snippet.ID>) {
         store.delete(ids, undoManager: undoManager)
         state.selection.subtract(ids.map { .snippet($0) })
+        if state.selection.isEmpty { state.selection = [.overview] }
     }
 }
 
-// MARK: Sidebar
+// MARK: - Rows
 
-private struct SnippetsSidebar: View {
-    @Environment(AppState.self) private var state
-
-    private var store: SnippetStore { state.store }
-
-    var body: some View {
-        @Bindable var state = state
-
-        List(selection: Binding(
-            get: { state.scope },
-            set: { if let scope = $0 { state.scope = scope; state.selection = [] } }
-        )) {
-            if state.status == .needsAccess {
-                AccessCallout()
-                    .listRowSeparator(.hidden)
-            }
-            if let update = state.updates.availableUpdate {
-                UpdateBanner(release: update)
-                    .listRowSeparator(.hidden)
-            }
-
-            Section("Library") {
-                ScopeRow(title: "All Snippets", symbol: "tray.full.fill", color: .accentColor, count: state.snippets(in: .all).count)
-                    .tag(SnippetScope.all)
-                ScopeRow(title: "Recently Used", symbol: "clock.fill", color: .orange, count: state.snippets(in: .recent).count)
-                    .tag(SnippetScope.recent)
-                ScopeRow(title: "On", symbol: "checkmark.circle.fill", color: .green, count: state.snippets(in: .enabled).count)
-                    .tag(SnippetScope.enabled)
-                ScopeRow(title: "Off", symbol: "pause.circle.fill", color: .gray, count: state.snippets(in: .disabled).count)
-                    .tag(SnippetScope.disabled)
-                ScopeRow(title: "With Tokens", symbol: "curlybraces", color: .indigo, count: state.snippets(in: .tokens).count)
-                    .tag(SnippetScope.tokens)
-            }
-
-            Section {
-                ForEach(store.groups) { group in
-                    DropTarget(groupID: group.id) {
-                        GroupRow(group: group, count: store.snippets(in: group.id).count)
-                    }
-                    .tag(SnippetScope.group(group.id))
-                }
-                DropTarget(groupID: nil) {
-                    ScopeRow(title: "Ungrouped", symbol: "tray", color: .gray, count: store.snippets(in: nil).count)
-                }
-                .tag(SnippetScope.ungrouped)
-            } header: {
-                HStack {
-                    Text("Groups")
-                    Spacer()
-                    Button("New Group", systemImage: "plus") { state.newGroup() }
-                        .labelStyle(.iconOnly)
-                        .buttonStyle(.borderless)
-                        .help("New Group")
-                }
-            }
-        }
-        .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom, spacing: 0) {
-            SidebarFooter()
-        }
-    }
-}
-
-/// The list's title and count, large like Reminders, tinted with the group colour.
-private struct ScopeHeader: View {
-    let count: Int
-    @Environment(AppState.self) private var state
-
-    private var tint: Color {
-        if case .group(let id) = state.scope { return state.store.group(id)?.tint ?? .accentColor }
-        return .primary
-    }
-
-    var body: some View {
-        HStack(alignment: .firstTextBaseline) {
-            Text(state.title(for: state.scope))
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .foregroundStyle(tint)
-                .lineLimit(1)
-            Spacer()
-            Text("\(count)")
-                .font(.system(size: 26, weight: .bold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(tint == .primary ? AnyShapeStyle(.secondary) : AnyShapeStyle(tint))
-                .accessibilityLabel("\(count) snippets")
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .background(.bar)
-    }
-}
-
-/// Shown under the list when several snippets are selected.
-private struct BulkActionsBar: View {
-    let ids: Set<Snippet.ID>
-    let onDelete: (Set<Snippet.ID>) -> Void
-    @Environment(AppState.self) private var state
-
-    private var store: SnippetStore { state.store }
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text("\(ids.count) Selected")
-                .font(.headline)
-                .monospacedDigit()
-            Button("Clear", action: { state.selection = [] })
-                .buttonStyle(.link)
-                .accessibilityIdentifier("bulk-clear")
-
-            Spacer(minLength: 8)
-
-            Button("Turn On", systemImage: "play.circle") {
-                for id in ids { store.setEnabled(id, true) }
-            }
-            .accessibilityIdentifier("bulk-on")
-            Button("Turn Off", systemImage: "pause.circle") {
-                for id in ids { store.setEnabled(id, false) }
-            }
-            .accessibilityIdentifier("bulk-off")
-
-            Menu {
-                Button("No Group") { store.move(ids, to: nil) }
-                if !store.groups.isEmpty { Divider() }
-                ForEach(store.groups) { group in
-                    Button(group.name) { store.move(ids, to: group.id) }
-                }
-            } label: {
-                Label("Move To", systemImage: "folder")
-            }
-            .fixedSize()
-            .accessibilityIdentifier("bulk-move")
-
-            Menu {
-                Button("Default (\(state.defaultAnimation.title))") { setEffect(nil) }
-                Divider()
-                ForEach(ReplacementAnimation.allCases) { style in
-                    Button(style.title, systemImage: style.symbol) { setEffect(style) }
-                }
-            } label: {
-                Label("Effect", systemImage: "sparkles")
-            }
-            .fixedSize()
-
-            Button("Delete", systemImage: "trash", role: .destructive) { onDelete(ids) }
-                .accessibilityIdentifier("bulk-delete")
-        }
-        .labelStyle(.titleAndIcon)
-        .controlSize(.regular)
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
-        .background(.bar)
-        .overlay(alignment: .top) { Divider() }
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("bulk-bar")
-    }
-
-    private func setEffect(_ style: ReplacementAnimation?) {
-        for id in ids { store.update(id) { $0.animation = style } }
-    }
-}
-
-private struct ScopeRow: View {
-    let title: String
-    let symbol: String
-    let color: Color
-    let count: Int
-
-    var body: some View {
-        HStack(spacing: 9) {
-            SnippetIcon(symbol: symbol, color: color, size: 22)
-            Text(title)
-            Spacer(minLength: 4)
-            Text("\(count)")
-                .font(.callout)
-                .monospacedDigit()
-                .foregroundStyle(.secondary)
-        }
-        .padding(.vertical, 2)
-    }
-}
-
-private struct GroupRow: View {
+private struct GroupHeader: View {
     let group: SnippetGroup
     let count: Int
     @Environment(AppState.self) private var state
     @State private var isPickingIcon = false
-    @State private var isHovering = false
 
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 8) {
+            DisclosureArrow(isExpanded: state.store.groupExpandedBinding(for: group.id))
+
             Button {
                 isPickingIcon = true
             } label: {
-                SnippetIcon(symbol: group.symbol, color: group.tint, size: 22)
+                SnippetIcon(symbol: group.symbol, color: group.tint, size: 24)
             }
             .buttonStyle(.plain)
             .help("Change Icon")
-            .popover(isPresented: $isPickingIcon, arrowEdge: .trailing) {
+            .popover(isPresented: $isPickingIcon, arrowEdge: .bottom) {
                 IconPicker(current: group.symbol, tint: group.tint) { icon in
                     if let icon { state.store.updateGroup(group.id) { $0.symbol = icon } }
                 }
             }
 
             Text(group.name)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.primary)
                 .lineLimit(1)
+            CountBadge(count: count, color: group.tint)
             Spacer(minLength: 4)
 
-            if isHovering {
-                Menu {
-                    GroupActionsMenu(group: group)
-                } label: {
-                    Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.secondary)
-                        .frame(width: 24, height: 22)
-                        .contentShape(Rectangle())
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .help("Group Options")
-                .accessibilityLabel("Options for \(group.name)")
-            } else {
-                Text("\(count)")
-                    .font(.callout)
-                    .monospacedDigit()
+            Menu {
+                GroupActionsMenu(group: group)
+            } label: {
+                Image(systemName: "ellipsis.circle")
+                    .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 24)
+                    .contentShape(Rectangle())
             }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .help("Group Options")
+            .accessibilityLabel("Options for \(group.name)")
 
             Toggle("Turn \(group.name) on or off", isOn: state.store.groupEnabledBinding(for: group.id))
                 .toggleStyle(.switch)
@@ -516,191 +383,87 @@ private struct GroupRow: View {
                 .labelsHidden()
                 .help(group.isEnabled ? "Turn Group Off" : "Turn Group On")
         }
-        .padding(.vertical, 2)
+        .padding(.vertical, 3)
+        // Line the switch up with the snippet rows' switches.
+        .padding(.trailing, 12)
         .opacity(group.isEnabled ? 1 : 0.55)
-        .onHover { isHovering = $0 }
-        .contextMenu { GroupActionsMenu(group: group) }
-    }
-}
-
-private struct SidebarFooter: View {
-    @Environment(AppState.self) private var state
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack(spacing: 8) {
-                Button("New Group", systemImage: "folder.badge.plus") { state.newGroup() }
-                    .help("New Group")
-                Button("Starter Packs", systemImage: "shippingbox") { state.isShowingPacks = true }
-                    .help("Add a Starter Pack")
-                Button("Settings", systemImage: "gearshape") { state.page = .settings }
-                    .help("Settings (⌘,)")
-                Spacer()
-                Text("\(state.store.totalKeysSaved.formatted()) keys saved")
-                    .font(.callout)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
-            .labelStyle(.iconOnly)
-            .buttonStyle(.borderless)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-        }
-    }
-}
-
-// MARK: List and grid
-
-private struct SnippetList: View {
-    let snippets: [Snippet]
-    let onDelete: (Set<Snippet.ID>) -> Void
-    @Environment(AppState.self) private var state
-
-    var body: some View {
-        @Bindable var state = state
-        List(selection: $state.selection) {
-            ForEach(snippets) { snippet in
-                SnippetRow(snippet: snippet, group: state.store.group(for: snippet),
-                           isEnabled: state.store.enabledBinding(for: snippet.id),
-                           hasProblem: state.store.problem(with: snippet) != nil)
-                    .tag(SidebarItem.snippet(snippet.id))
-                    .snippetInteractions(snippet, onDelete: onDelete)
-            }
-        }
-        .listStyle(.inset)
-    }
-}
-
-private struct SnippetGrid: View {
-    let snippets: [Snippet]
-    let onDelete: (Set<Snippet.ID>) -> Void
-    @Environment(AppState.self) private var state
-
-    var body: some View {
-        ScrollView {
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 220, maximum: 320), spacing: 14)], spacing: 14) {
-                ForEach(snippets) { snippet in
-                    SnippetCard(snippet: snippet, group: state.store.group(for: snippet),
-                                isSelected: state.selectedSnippetIDs.contains(snippet.id))
-                        .onTapGesture {
-                            let item = SidebarItem.snippet(snippet.id)
-                            if NSEvent.modifierFlags.contains(.command) {
-                                if state.selection.contains(item) { state.selection.remove(item) } else { state.selection.insert(item) }
-                            } else {
-                                state.selection = [item]
-                            }
-                        }
-                        .snippetInteractions(snippet, onDelete: onDelete)
-                }
-            }
-            .padding(18)
-        }
-        .background(Color(nsColor: .controlBackgroundColor))
         .contentShape(Rectangle())
-        .onTapGesture { state.selection = [] }
+        .contextMenu {
+            GroupActionsMenu(group: group)
+        }
+        // macOS reads a sidebar section header as one element, so its controls are offered as named actions.
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("\(group.name) group")
+        .accessibilityValue("\(count) \(count == 1 ? "snippet" : "snippets"), \(group.isEnabled ? "on" : "off"), \(group.isExpanded ? "expanded" : "collapsed")")
+        .accessibilityAddTraits(.isHeader)
+        .accessibilityIdentifier("group-header-\(group.name)")
+        .accessibilityAction(named: group.isExpanded ? "Collapse" : "Expand") {
+            state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
+        }
+        .accessibilityAction(named: group.isEnabled ? "Turn Off" : "Turn On") {
+            state.store.updateGroup(group.id) { $0.isEnabled.toggle() }
+        }
+        .accessibilityAction(named: "Rename") { state.renamingGroupID = group.id }
+        .accessibilityAction(named: "Change Colour") { state.colorPickerGroupID = group.id }
     }
 }
 
-private extension View {
-    /// Drag to a group, and the right-click menu.
-    func snippetInteractions(_ snippet: Snippet, onDelete: @escaping (Set<Snippet.ID>) -> Void) -> some View {
-        modifier(SnippetInteractions(snippet: snippet, onDelete: onDelete))
-    }
-}
-
-private struct SnippetInteractions: ViewModifier {
-    let snippet: Snippet
-    let onDelete: (Set<Snippet.ID>) -> Void
-    @Environment(AppState.self) private var state
-
-    func body(content: Content) -> some View {
-        content
-            .draggable(SnippetDrag.payload(for: snippet.id)) {
-                Label(snippet.trigger.isEmpty ? "Snippet" : snippet.trigger, systemImage: "text.quote")
-                    .padding(6)
-                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
-            }
-            .contextMenu {
-                let selected = state.selectedSnippetIDs
-                SnippetActionsMenu(ids: selected.contains(snippet.id) ? selected : [snippet.id], onDelete: onDelete)
-            }
-    }
-}
-
-/// A snippet as a card in the grid.
-private struct SnippetCard: View {
-    let snippet: Snippet
-    let group: SnippetGroup?
-    let isSelected: Bool
-    @Environment(AppState.self) private var state
-    @State private var isHovering = false
-
-    private var tint: Color { group?.tint ?? .accentColor }
-    private var isActive: Bool { state.store.isActive(snippet) }
+/// A large, easy-to-hit arrow that collapses and expands a sidebar section.
+private struct DisclosureArrow: View {
+    @Binding var isExpanded: Bool
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .top) {
-                SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: tint, size: 38)
-                Spacer()
-                Toggle("Turn \(snippet.trigger) on or off", isOn: state.store.enabledBinding(for: snippet.id))
-                    .toggleStyle(.switch)
-                    .controlSize(.small)
-                    .labelsHidden()
-            }
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 5) {
-                    Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
-                        .font(.headline.monospaced())
-                        .lineLimit(1)
-                    if snippet.mode == .immediate {
-                        Image(systemName: "bolt.fill").imageScale(.small).foregroundStyle(.secondary)
-                            .accessibilityLabel("Expands immediately")
-                    }
-                    if state.store.problem(with: snippet) != nil {
-                        Image(systemName: "exclamationmark.triangle.fill").imageScale(.small).foregroundStyle(.orange)
-                            .accessibilityLabel("Needs attention")
-                    }
-                }
-                Text(snippet.preview)
-                    .font(.callout)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(2, reservesSpace: true)
-            }
-            HStack(spacing: 6) {
-                if let group {
-                    Text(group.name)
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(tint)
-                        .padding(.horizontal, 7)
-                        .padding(.vertical, 2)
-                        .background(tint.opacity(0.14), in: Capsule())
-                }
-                Spacer()
-                Label(snippet.useCount.formatted(), systemImage: "arrow.uturn.right")
+        Button {
+            withAnimation(reduceMotion ? nil : .snappy(duration: 0.2)) { isExpanded.toggle() }
+        } label: {
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(.secondary)
+                .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                .frame(width: 22, height: 22)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(isExpanded ? "Collapse" : "Expand")
+        .accessibilityLabel(isExpanded ? "Collapse group" : "Expand group")
+    }
+}
+
+private struct CountBadge: View {
+    let count: Int
+    let color: Color
+
+    var body: some View {
+        Text("\(count)")
+            .font(.caption.weight(.semibold))
+            .monospacedDigit()
+            .foregroundStyle(color)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1)
+            .background(color.opacity(0.16), in: Capsule())
+    }
+}
+
+/// Overview and History rows at the top of the sidebar.
+private struct SidebarLink: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    var badge: String?
+
+    var body: some View {
+        HStack(spacing: 10) {
+            SnippetIcon(symbol: symbol, color: color, size: 26)
+            Text(title).font(.body.weight(.medium))
+            Spacer()
+            if let badge {
+                Text(badge)
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.secondary)
-                    .help("Used \(snippet.useCount) times")
             }
         }
-        .padding(14)
-        .opacity(isActive ? 1 : 0.55)
-        .background {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(nsColor: .windowBackgroundColor))
-        }
-        .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(isSelected ? Color.accentColor : Color.primary.opacity(isHovering ? 0.25 : 0.1), lineWidth: isSelected ? 2.5 : 1)
-        }
-        .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .onHover { isHovering = $0 }
-        .animation(.easeOut(duration: 0.15), value: isHovering)
-        .accessibilityElement(children: .contain)
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .accessibilityIdentifier("card-\(snippet.trigger)")
     }
 }
 
@@ -713,51 +476,44 @@ private struct SnippetRow: View {
     private var isActive: Bool { snippet.isEnabled && (group?.isEnabled ?? true) }
 
     var body: some View {
-        HStack(spacing: 12) {
-            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint ?? .accentColor, size: 32)
+        HStack(spacing: 10) {
+            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint ?? .accentColor, size: 30)
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
                     Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
-                        .font(.body.monospaced().weight(.semibold))
+                        .font(.body.weight(.semibold))
                         .foregroundStyle(snippet.trigger.isEmpty ? .secondary : .primary)
                         .lineLimit(1)
                     if snippet.mode == .immediate {
-                        Image(systemName: "bolt.fill").imageScale(.small).foregroundStyle(.secondary)
-                            .help("Expands immediately").accessibilityLabel("Expands immediately")
+                        Image(systemName: "bolt.fill")
+                            .imageScale(.small)
+                            .foregroundStyle(.secondary)
+                            .help("Expands immediately")
+                            .accessibilityLabel("Expands immediately")
                     }
                     if TokenRenderer.containsTokens(snippet.expansion) {
-                        Image(systemName: "curlybraces").imageScale(.small).foregroundStyle(.secondary)
-                            .help("Contains tokens").accessibilityLabel("Contains tokens")
+                        Image(systemName: "curlybraces")
+                            .imageScale(.small)
+                            .foregroundStyle(.secondary)
+                            .help("Contains tokens")
+                            .accessibilityLabel("Contains tokens")
                     }
                     if hasProblem {
-                        Image(systemName: "exclamationmark.triangle.fill").imageScale(.small).foregroundStyle(.orange)
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .imageScale(.small)
+                            .foregroundStyle(.orange)
                             .accessibilityLabel("Needs attention")
                     }
                 }
                 Text(snippet.preview)
-                    .font(.callout)
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             .opacity(isActive ? 1 : 0.45)
 
-            Spacer(minLength: 8)
-
-            if let group {
-                Text(group.name)
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(group.tint)
-                    .padding(.horizontal, 7)
-                    .padding(.vertical, 2)
-                    .background(group.tint.opacity(0.14), in: Capsule())
-            }
-            Text(snippet.useCount.formatted())
-                .font(.callout)
-                .monospacedDigit()
-                .foregroundStyle(.tertiary)
-                .frame(minWidth: 28, alignment: .trailing)
-                .help("Used \(snippet.useCount) times")
+            Spacer(minLength: 4)
 
             Toggle("Turn \(snippet.trigger) on or off", isOn: $isEnabled)
                 .toggleStyle(.switch)
@@ -765,52 +521,9 @@ private struct SnippetRow: View {
                 .labelsHidden()
                 .help(snippet.isEnabled ? "Turn Off" : "Turn On")
         }
-        .padding(.vertical, 5)
+        .padding(.vertical, 4)
     }
 }
-
-// MARK: - Settings page
-
-/// Settings inside the main window, laid out like System Settings.
-struct SettingsPage: View {
-    @AppStorage("settingsPane") private var pane: SettingsPane = .general
-
-    var body: some View {
-        NavigationSplitView {
-            List(selection: Binding(get: { pane }, set: { if let value = $0 { pane = value } })) {
-                ForEach(SettingsPane.allCases) { item in
-                    HStack(spacing: 9) {
-                        SnippetIcon(symbol: item.symbol, color: item.color, size: 22)
-                        Text(item.title)
-                    }
-                    .padding(.vertical, 2)
-                    .tag(item)
-                }
-            }
-            .listStyle(.sidebar)
-            .navigationSplitViewColumnWidth(min: 200, ideal: 220, max: 280)
-        } detail: {
-            ScrollView {
-                Group {
-                    switch pane {
-                    case .general: GeneralSettingsPane()
-                    case .suggestions: SuggestionSettingsPane()
-                    case .effects: EffectsSettingsPane()
-                    case .shortcuts: ShortcutSettingsPane()
-                    case .backup: BackupSettingsPane()
-                    case .about: AboutSettingsPane()
-                    }
-                }
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
-            }
-            .navigationTitle(pane.title)
-        }
-    }
-}
-
-// MARK: - Shared pieces
 
 /// A snippet's icon in a small rounded square, tinted with its group's colour.
 struct SnippetIcon: View {
@@ -830,12 +543,50 @@ struct SnippetIcon: View {
                     .foregroundStyle(.white)
             }
         }
-        .frame(width: size, height: size)
-        .background {
-            RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                .fill(fill)
+            .frame(width: size, height: size)
+            .background {
+                RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+                    .fill(fill)
+            }
+            .accessibilityHidden(true)
+    }
+}
+
+private struct SidebarSummary: View {
+    let count: Int
+    let keysSaved: Int
+    @Binding var sortOrder: SnippetSortOrder
+
+    var body: some View {
+        VStack(spacing: 0) {
+            Divider()
+            HStack(spacing: 10) {
+                Menu {
+                    Picker("Sort By", selection: $sortOrder) {
+                        ForEach(SnippetSortOrder.allCases) { order in
+                            Text(order.title).tag(order)
+                        }
+                    }
+                    .pickerStyle(.inline)
+                } label: {
+                    Label("Sort By \(sortOrder.title)", systemImage: "arrow.up.arrow.down")
+                        .labelStyle(.iconOnly)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("Sort By: \(sortOrder.title)")
+
+                Text("\(count) \(count == 1 ? "snippet" : "snippets")")
+                Spacer()
+                Text("\(keysSaved.formatted()) keys saved")
+            }
+            .font(.subheadline)
+            .monospacedDigit()
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 8)
         }
-        .accessibilityHidden(true)
     }
 }
 
@@ -862,6 +613,8 @@ private struct AccessCallout: View {
     }
 }
 
+// MARK: - Drag and drop
+
 enum SnippetDrag {
     static let prefix = "quill-snippet:"
 
@@ -873,9 +626,9 @@ enum SnippetDrag {
     }
 }
 
-/// Accepts dropped snippets (moves them into the group) and dropped text from other apps
-/// (makes a new snippet there). Highlights while targeted.
-private struct DropTarget<Content: View>: View {
+/// A section header that accepts dropped snippets (to move them into its group) and
+/// dropped text from other apps (to make a new snippet there). Highlights while targeted.
+private struct DropHeader<Content: View>: View {
     let groupID: SnippetGroup.ID?
     @ViewBuilder let content: Content
     @Environment(AppState.self) private var state
@@ -883,6 +636,8 @@ private struct DropTarget<Content: View>: View {
 
     var body: some View {
         content
+            .padding(.vertical, 2)
+            .padding(.horizontal, 4)
             .background(isTargeted ? Color.accentColor.opacity(0.2) : .clear, in: RoundedRectangle(cornerRadius: 6))
             .dropDestination(for: String.self) { items, _ in
                 state.handleDrop(items, into: groupID)

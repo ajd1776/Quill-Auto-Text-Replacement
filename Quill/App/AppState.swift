@@ -180,26 +180,26 @@ final class AppState {
 
     // MARK: Library window
 
-    var page: AppPage = .snippets
     var scope: SnippetScope = .all
 
-    /// Selected snippets. Selecting .overview or .history (from menus, ⌘K) switches page instead.
-    var selection: Set<SidebarItem> = [] {
-        didSet { route() }
-    }
+    /// What's selected in the sidebar: Stats, History, or one or more snippets.
+    var selection: Set<SidebarItem> = [.overview]
 
-    private func route() {
-        if selection.contains(.overview) {
-            selection = []
-            page = .stats
-        } else if selection.contains(.history) {
-            selection = []
-            page = .history
-        } else if !selection.isEmpty {
-            page = .snippets
-            // Make sure a snippet picked elsewhere is visible in the current filter.
-            let visible = Set(snippets(in: scope).map(\.id))
-            if !selectedSnippetIDs.isSubset(of: visible) { scope = .all }
+    /// Which area the window shows, worked out from the sidebar selection. Setting it selects that area,
+    /// so menus, ⌘K and the menu bar panel can switch areas; Settings opens its own window.
+    var page: AppPage {
+        get {
+            if selection.contains(.history) { return .history }
+            if selection.contains(.overview) { return .stats }
+            return .snippets
+        }
+        set {
+            switch newValue {
+            case .stats: selection = [.overview]
+            case .history: selection = [.history]
+            case .snippets: if selection.contains(.overview) || selection.contains(.history) { selection = [] }
+            case .settings: showSettings()
+            }
         }
     }
 
@@ -249,6 +249,13 @@ final class AppState {
     }
 
     @ObservationIgnored var openLibraryAction: (() -> Void)?
+    /// Opens the Settings window (set by the menu bar label, which has the SwiftUI environment).
+    @ObservationIgnored var openSettingsAction: (() -> Void)?
+
+    func showSettings() {
+        NSApp.activate()
+        openSettingsAction?()
+    }
     @ObservationIgnored private var visibleWindows = Set<String>()
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
 

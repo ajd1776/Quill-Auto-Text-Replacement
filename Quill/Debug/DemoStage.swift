@@ -144,8 +144,7 @@ final class DemoStage {
 
     /// The library window: editor, grid, groups, then each page.
     private func tour(openLibrary: @escaping () -> Void) {
-        UserDefaults.standard.set("list", forKey: "snippetLayout")
-        state.page = .snippets
+        state.selection = []
         state.scope = .all
         state.selection = []
         openLibrary()
@@ -171,7 +170,7 @@ final class DemoStage {
             try await pause(1.6)
             state.selection = []
             try await pause(0.5)
-            UserDefaults.standard.set("grid", forKey: "snippetLayout")
+            state.selection = Set(state.store.snippets.prefix(3).map { .snippet($0.id) })
             try await pause(1.6)
             for name in ["Personal", "Shop"] {
                 if let group = state.store.groups.first(where: { $0.name == name }) { state.scope = .group(group.id) }
@@ -179,12 +178,11 @@ final class DemoStage {
             }
             state.scope = .all
             try await pause(1.0)
-            for page in [AppPage.stats, .history, .settings] {
+            for page in [AppPage.stats, .history] {
                 state.page = page
                 try await pause(1.8)
             }
-            state.page = .snippets
-            UserDefaults.standard.set("list", forKey: "snippetLayout")
+            state.selection = []
             try await pause(1.2)
             print("QUILL-DEMO-DONE"); fflush(stdout)
         }
