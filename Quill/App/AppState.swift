@@ -144,7 +144,7 @@ final class AppState {
         didSet { defaults.set(soundVolume, forKey: Keys.soundVolume) }
     }
 
-    var menuBarIcon: MenuBarIcon = .enchantedNib {
+    var menuBarIcon: MenuBarIcon = .solidNib {
         didSet { defaults.set(menuBarIcon.rawValue, forKey: Keys.menuBarIcon) }
     }
 
@@ -319,7 +319,7 @@ final class AppState {
         }
         keepsDailyBackups = defaults.object(forKey: Keys.keepsDailyBackups) as? Bool ?? true
         keepsHistory = defaults.object(forKey: Keys.keepsHistory) as? Bool ?? true
-        menuBarIcon = defaults.string(forKey: Keys.menuBarIcon).flatMap(MenuBarIcon.init) ?? .enchantedNib
+        menuBarIcon = defaults.string(forKey: Keys.menuBarIcon).flatMap(MenuBarIcon.init) ?? .solidNib
         sortOrder = defaults.string(forKey: Keys.sortOrder).flatMap(SnippetSortOrder.init) ?? .shortcut
         isPaused = defaults.bool(forKey: Keys.isPaused)
         pausedUntil = defaults.object(forKey: Keys.pausedUntil) as? Date

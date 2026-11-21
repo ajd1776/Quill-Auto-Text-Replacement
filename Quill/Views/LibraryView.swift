@@ -231,7 +231,7 @@ struct LibraryView: View {
         }
         .toolbar {
             ToolbarItemGroup {
-                Button("New Snippet", systemImage: "plus.circle.fill") {
+                Button("New Snippet", systemImage: "plus.circle") {
                     searchText = ""
                     state.newSnippet()
                 }
@@ -389,6 +389,21 @@ struct LibraryView: View {
 
 // MARK: - Rows
 
+/// The small round symbols on a group header (add, options): one size, weight and colour.
+private struct HeaderSymbol: View {
+    let name: String
+
+    var body: some View {
+        // A borderless menu draws its symbol at the standard 13-point size in the label colour,
+        // so the add button uses exactly that too.
+        Image(systemName: name)
+            .font(.system(size: 13, weight: .regular))
+            .foregroundStyle(Color(nsColor: .labelColor))
+            .frame(width: 26, height: 24)
+            .contentShape(Rectangle())
+    }
+}
+
 /// A thin vertical line between groups of toolbar buttons.
 private struct ToolbarDivider: View {
     var body: some View {
@@ -447,24 +462,17 @@ private struct GroupHeader: View {
             Button {
                 state.newSnippet(in: group.id)
             } label: {
-                Image(systemName: "plus.circle")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 26, height: 24)
-                    .contentShape(Rectangle())
+                HeaderSymbol(name: "plus.circle")
             }
             .buttonStyle(.plain)
+            .fixedSize()
             .help("New Snippet in \(group.name)")
             .accessibilityLabel("New snippet in \(group.name)")
 
             Menu {
                 GroupActionsMenu(group: group)
             } label: {
-                Image(systemName: "ellipsis.circle")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 26, height: 24)
-                    .contentShape(Rectangle())
+                HeaderSymbol(name: "ellipsis.circle")
             }
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
