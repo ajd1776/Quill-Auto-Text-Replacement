@@ -30,7 +30,7 @@ struct LibraryView: View {
 
         NavigationSplitView {
             sidebar
-                .navigationSplitViewColumnWidth(min: 250, ideal: 300, max: 440)
+                .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 460)
         } detail: {
             detail
         }
@@ -139,6 +139,7 @@ struct LibraryView: View {
             if state.status == .needsAccess {
                 AccessCallout()
                     .listRowSeparator(.hidden)
+                    .selectionDisabled()
             }
 
             if let update = state.updates.availableUpdate {
@@ -161,11 +162,10 @@ struct LibraryView: View {
                 } header: {
                     DropHeader(groupID: nil) {
                         HStack(spacing: 8) {
-                            DisclosureArrow(isExpanded: $ungroupedExpanded)
                             Text(store.groups.isEmpty ? "Snippets" : "Ungrouped")
                                 .font(.subheadline.weight(.semibold))
-                            CountBadge(count: store.snippets(in: nil).count, color: .secondary)
                             Spacer()
+                            DisclosureArrow(isExpanded: $ungroupedExpanded)
                         }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(store.groups.isEmpty ? "Snippets" : "Ungrouped")
@@ -233,7 +233,17 @@ struct LibraryView: View {
                     searchText = ""
                     state.newSnippet()
                 }
-                .help("New Snippet, or open the menu for a new group")
+                .help("New Snippet (⌘N). Open the arrow for more.")
+
+                Button("New Group", systemImage: "folder.badge.plus") {
+                    state.newGroup()
+                }
+                .help("New Group (⇧⌘N)")
+
+                Button("Add Starter Pack", systemImage: "shippingbox") {
+                    state.isShowingPacks = true
+                }
+                .help("Add a Starter Pack")
             }
         }
     }
@@ -247,6 +257,8 @@ struct LibraryView: View {
                 isEnabled: store.enabledBinding(for: snippet.id),
                 hasProblem: store.problem(with: snippet) != nil
             )
+            .padding(.leading, 18)
+            .padding(.trailing, 14)
             .tag(SidebarItem.snippet(snippet.id))
             .draggable(SnippetDrag.payload(for: snippet.id)) {
                 Label(snippet.trigger.isEmpty ? "Snippet" : snippet.trigger, systemImage: "text.quote")
@@ -340,8 +352,6 @@ private struct GroupHeader: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            DisclosureArrow(isExpanded: state.store.groupExpandedBinding(for: group.id))
-
             Button {
                 isPickingIcon = true
             } label: {
@@ -359,7 +369,6 @@ private struct GroupHeader: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.primary)
                 .lineLimit(1)
-            CountBadge(count: count, color: group.tint)
             Spacer(minLength: 4)
 
             Menu {
@@ -382,10 +391,10 @@ private struct GroupHeader: View {
                 .controlSize(.mini)
                 .labelsHidden()
                 .help(group.isEnabled ? "Turn Group Off" : "Turn Group On")
+
+            DisclosureArrow(isExpanded: state.store.groupExpandedBinding(for: group.id))
         }
         .padding(.vertical, 3)
-        // Line the switch up with the snippet rows' switches.
-        .padding(.trailing, 12)
         .opacity(group.isEnabled ? 1 : 0.55)
         .contentShape(Rectangle())
         .contextMenu {
@@ -427,21 +436,6 @@ private struct DisclosureArrow: View {
         .buttonStyle(.plain)
         .help(isExpanded ? "Collapse" : "Expand")
         .accessibilityLabel(isExpanded ? "Collapse group" : "Expand group")
-    }
-}
-
-private struct CountBadge: View {
-    let count: Int
-    let color: Color
-
-    var body: some View {
-        Text("\(count)")
-            .font(.caption.weight(.semibold))
-            .monospacedDigit()
-            .foregroundStyle(color)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 1)
-            .background(color.opacity(0.16), in: Capsule())
     }
 }
 
@@ -595,21 +589,39 @@ private struct AccessCallout: View {
     @Environment(AppState.self) private var state
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Label("Quill Is Off", systemImage: "hand.raised.fill")
-                .font(.headline)
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "hand.raised.fill")
+                .font(.title2)
                 .foregroundStyle(.orange)
-            Text("Allow access so Quill can expand snippets.")
-                .font(.callout)
-                .foregroundStyle(.secondary)
-                .lineLimit(2)
-            Button("Open Privacy Settings…") {
-                state.requestAccess()
-                state.openAccessibilitySettings()
+                .frame(width: 26)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Quill Is Off")
+                    .font(.headline)
+                Text("Allow Accessibility access so Quill can expand your snippets.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(3)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                Button("Allow Access…") {
+                    state.requestAccess()
+                    state.openAccessibilitySettings()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.orange)
+                .padding(.top, 2)
             }
-            .controlSize(.small)
+            Spacer(minLength: 0)
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
         }
         .padding(.vertical, 6)
+        .accessibilityElement(children: .contain)
     }
 }
 

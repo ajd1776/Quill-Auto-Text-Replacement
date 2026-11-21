@@ -92,10 +92,12 @@ final class QuillUITests: XCTestCase {
         let shop = header("Shop")
         XCTAssertTrue(shop.waitForExistence(timeout: 5), "The Shop header is in the sidebar")
         XCTAssertTrue((shop.value as? String)?.contains("expanded") == true)
-        // The dropdown arrow is at the leading edge of the header.
-        shop.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 12, dy: 0)).click()
+        shop.rightClick()
+        app.menuItems["Collapse Group"].firstMatch.click()
         XCTAssertFalse(row("thx").waitForExistence(timeout: 2), "Collapsing Shop hides its snippets")
-        shop.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 12, dy: 0)).click()
+        XCTAssertTrue((shop.value as? String)?.contains("collapsed") == true)
+        shop.rightClick()
+        app.menuItems["Expand Group"].firstMatch.click()
         XCTAssertTrue(row("thx").waitForExistence(timeout: 5), "Expanding Shop shows them again")
     }
 
@@ -104,8 +106,8 @@ final class QuillUITests: XCTestCase {
         let shop = header("Shop")
         XCTAssertTrue(shop.waitForExistence(timeout: 5))
         XCTAssertTrue((shop.value as? String)?.contains(", on,") == true)
-        // The switch is at the trailing edge of the header.
-        shop.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5)).withOffset(CGVector(dx: -22, dy: 0)).click()
+        shop.rightClick()
+        app.menuItems["Turn Group Off"].firstMatch.click()
         let off = NSPredicate(format: "value CONTAINS ', off,'")
         expectation(for: off, evaluatedWith: shop)
         waitForExpectations(timeout: 5)

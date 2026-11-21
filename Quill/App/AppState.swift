@@ -82,6 +82,7 @@ final class AppState {
 
     var status: Status {
         #if DEBUG
+        if CommandLine.arguments.contains("-QuillDemoNeedsAccess") { return .needsAccess }
         if DemoLibrary.isActive { return .on }
         #endif
         if !isTrusted || !isEngineRunning { return .needsAccess }

@@ -107,6 +107,10 @@ struct GroupActionsMenu: View {
         Button(group.isEnabled ? "Turn Group Off" : "Turn Group On", systemImage: group.isEnabled ? "pause.circle" : "play.circle") {
             store.updateGroup(group.id) { $0.isEnabled.toggle() }
         }
+        Button(group.isExpanded ? "Collapse Group" : "Expand Group",
+               systemImage: group.isExpanded ? "chevron.up" : "chevron.down") {
+            store.updateGroup(group.id) { $0.isExpanded.toggle() }
+        }
         Button("Rename…", systemImage: "pencil") {
             state.renamingGroupID = group.id
         }
