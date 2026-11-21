@@ -399,11 +399,23 @@ private struct GroupHeader: View {
             .buttonStyle(.plain)
             .help("Change Icon and Colour")
 
-            Text(group.name)
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
-            Spacer(minLength: 4)
+            // Only the name and the empty space after it collapse the group: the icon, menu,
+            // switch and arrow each keep to their own job.
+            HStack(spacing: 0) {
+                Text(group.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+            }
+            .frame(maxHeight: .infinity)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                withAnimation(.snappy(duration: 0.2)) {
+                    state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
+                }
+            }
+            .help(group.isExpanded ? "Click to collapse \(group.name)" : "Click to expand \(group.name)")
 
             Menu {
                 GroupActionsMenu(group: group)
@@ -434,13 +446,6 @@ private struct GroupHeader: View {
         .contextMenu {
             GroupActionsMenu(group: group)
         }
-        // Clicking anywhere on the header (outside its buttons and switch) collapses or expands it.
-        .simultaneousGesture(TapGesture().onEnded {
-            withAnimation(.snappy(duration: 0.2)) {
-                state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
-            }
-        })
-        .help(group.isExpanded ? "Click to collapse \(group.name)" : "Click to expand \(group.name)")
         // macOS reads a sidebar section header as one element, so its controls are offered as named actions.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(group.name) group")

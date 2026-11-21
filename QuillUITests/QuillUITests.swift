@@ -132,6 +132,19 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(row("thx").waitForExistence(timeout: 5), "Clicking again expands it")
     }
 
+    func testClickingGroupIconDoesNotCollapse() {
+        launch()
+        XCTAssertTrue(row("thx").waitForExistence(timeout: 5))
+        let shop = header("Shop")
+        XCTAssertTrue(shop.waitForExistence(timeout: 5))
+        // The icon square is at the leading edge of the header.
+        shop.coordinate(withNormalizedOffset: CGVector(dx: 0, dy: 0.5)).withOffset(CGVector(dx: 14, dy: 0)).click()
+        let name = app.textFields["appearance-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Clicking the icon opens Icon and Colour")
+        app.buttons["Cancel"].firstMatch.click()
+        XCTAssertTrue(row("thx").waitForExistence(timeout: 3), "…and doesn't collapse the group")
+    }
+
     func testGroupSwitch() {
         launch()
         let shop = header("Shop")
