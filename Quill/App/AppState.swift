@@ -548,7 +548,8 @@ final class AppState {
     /// Dropped snippets move into the group; dropped text from another app becomes a new snippet there.
     @discardableResult
     func handleDrop(_ items: [String], into groupID: SnippetGroup.ID?) -> Bool {
-        let ids = Set(items.compactMap(SnippetDrag.snippetID(from:)))
+        if items.contains(where: { SnippetDrag.groupID(from: $0) != nil }) { return false }
+        let ids = Set(items.flatMap(SnippetDrag.snippetIDs(from:)))
         if !ids.isEmpty {
             store.move(ids, to: groupID)
             if let groupID { store.updateGroup(groupID) { $0.isExpanded = true } }

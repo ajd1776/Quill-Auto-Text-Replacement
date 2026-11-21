@@ -163,6 +163,19 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(row("thx").waitForExistence(timeout: 3), "Double-clicking doesn't collapse the group")
     }
 
+    func testDragToReorder() {
+        launch()
+        let eml = row("eml"), addr = row("addr")
+        XCTAssertTrue(eml.waitForExistence(timeout: 5))
+        // Drag whichever is lower onto the one above it; it should land above.
+        let (lower, upper, lowerName, upperName) = eml.frame.minY > addr.frame.minY
+            ? (eml, addr, "eml", "addr") : (addr, eml, "addr", "eml")
+        lower.press(forDuration: 0.6, thenDragTo: upper)
+        let moved = NSPredicate { _, _ in self.row(lowerName).frame.minY < self.row(upperName).frame.minY }
+        expectation(for: moved, evaluatedWith: nil)
+        waitForExpectations(timeout: 5)
+    }
+
     func testGroupSwitch() {
         launch()
         let shop = header("Shop")

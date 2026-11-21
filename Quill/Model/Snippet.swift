@@ -118,6 +118,8 @@ enum SnippetSortOrder: String, CaseIterable, Identifiable {
     case mostUsed
     case recentlyUsed
     case newest
+    /// The order you arrange by dragging.
+    case manual
 
     var id: String { rawValue }
 
@@ -127,10 +129,17 @@ enum SnippetSortOrder: String, CaseIterable, Identifiable {
         case .mostUsed: "Most Used"
         case .recentlyUsed: "Recently Used"
         case .newest: "Newest"
+        case .manual: "Manual"
         }
     }
 
+    /// Sorts snippets in this order. Manual keeps them as arranged in the library.
+    func sorted(_ snippets: [Snippet]) -> [Snippet] {
+        self == .manual ? snippets : snippets.sorted(by: areInIncreasingOrder)
+    }
+
     func areInIncreasingOrder(_ lhs: Snippet, _ rhs: Snippet) -> Bool {
+        if self == .manual { return false }
         // Unnamed snippets stay on top so a new one is easy to find.
         if lhs.trigger.isEmpty != rhs.trigger.isEmpty { return lhs.trigger.isEmpty }
         let byTrigger = lhs.trigger.localizedStandardCompare(rhs.trigger) == .orderedAscending
@@ -145,6 +154,8 @@ enum SnippetSortOrder: String, CaseIterable, Identifiable {
             return left != right ? left > right : byTrigger
         case .newest:
             return lhs.created > rhs.created
+        case .manual:
+            return false
         }
     }
 }

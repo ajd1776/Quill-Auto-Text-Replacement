@@ -122,6 +122,38 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(store.group(group.id)?.colorValue, "#336699", "A custom colour wins over the preset")
     }
 
+    func testMoveSnippetsBeforeAnother() {
+        let a = store.add(trigger: "ma", expansion: "a")
+        let b = store.add(trigger: "mb", expansion: "b")
+        let group = store.addGroup(named: "Target")
+        let c = store.add(trigger: "mc", expansion: "c", groupID: group.id)
+        store.move([a.id, b.id], before: c.id, in: nil)
+        let order = store.snippets.map(\.id)
+        let ia = order.firstIndex(of: a.id)!, ib = order.firstIndex(of: b.id)!, ic = order.firstIndex(of: c.id)!
+        XCTAssertTrue(ia < ib && ib < ic, "Moved snippets land just before the target, keeping their order")
+        XCTAssertEqual(store.snippet(a.id)?.groupID, group.id, "They join the target's group")
+        store.move([c.id], before: c.id, in: nil)
+        XCTAssertEqual(store.snippets.map(\.id), order, "Dropping a snippet on itself changes nothing")
+        store.move([a.id], before: nil, in: nil)
+        XCTAssertNil(store.snippet(a.id)?.groupID, "Dropping on a header moves it to the end of that group")
+    }
+
+    func testMoveGroupBefore() {
+        let ids = store.groups.map(\.id)
+        store.moveGroup(ids[2], before: ids[0])
+        XCTAssertEqual(store.groups.map(\.id), [ids[2], ids[0], ids[1]])
+        store.moveGroup(ids[2], before: nil)
+        XCTAssertEqual(store.groups.map(\.id), ids)
+    }
+
+    func testManualOrderKeepsLibraryOrder() {
+        let order = store.snippets
+        XCTAssertEqual(SnippetSortOrder.manual.sorted(order).map(\.id), order.map(\.id))
+        XCTAssertEqual(SnippetDrag.snippetIDs(from: SnippetDrag.payload(for: order.prefix(2).map(\.id))), order.prefix(2).map(\.id))
+        XCTAssertNotNil(SnippetDrag.groupID(from: SnippetDrag.groupPayload(for: UUID())))
+        XCTAssertTrue(SnippetDrag.snippetIDs(from: "plain text").isEmpty)
+    }
+
     func testStarterPacks() {
         let pack = StarterPack.all[0]
         XCTAssertNil(store.installedGroup(for: pack))

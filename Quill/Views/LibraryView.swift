@@ -22,7 +22,7 @@ struct LibraryView: View {
             $0.trigger.localizedCaseInsensitiveContains(query)
                 || $0.expansion.localizedCaseInsensitiveContains(query)
         }
-        return matching.sorted(by: state.sortOrder.areInIncreasingOrder)
+        return state.sortOrder.sorted(matching)
     }
 
     var body: some View {
@@ -296,11 +296,13 @@ struct LibraryView: View {
             .padding(.leading, 18)
             .padding(.trailing, 14)
             .tag(SidebarItem.snippet(snippet.id))
-            .draggable(SnippetDrag.payload(for: snippet.id)) {
-                Label(snippet.trigger.isEmpty ? "Snippet" : snippet.trigger, systemImage: "text.quote")
+            .draggable(SnippetDrag.payload(for: dragIDs(for: snippet))) {
+                let count = dragIDs(for: snippet).count
+                Label(count > 1 ? "\(count) Snippets" : (snippet.trigger.isEmpty ? "Snippet" : snippet.trigger), systemImage: "text.quote")
                     .padding(6)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
             }
+            .modifier(SnippetRowDrop(snippet: snippet))
             .contextMenu {
                 SnippetActionsMenu(ids: contextIDs(for: snippet), onDelete: delete)
             }
@@ -365,6 +367,13 @@ struct LibraryView: View {
 
     // MARK: Actions
 
+    /// Dragging a selected row drags the whole selection, in library order, like Finder.
+    private func dragIDs(for snippet: Snippet) -> [Snippet.ID] {
+        let selected = state.selectedSnippetIDs
+        guard selected.contains(snippet.id), selected.count > 1 else { return [snippet.id] }
+        return store.snippets.map(\.id).filter(selected.contains)
+    }
+
     /// Right-clicking a selected row acts on the whole selection, like Finder.
     private func contextIDs(for snippet: Snippet) -> Set<Snippet.ID> {
         let selected = state.selectedSnippetIDs
@@ -426,8 +435,27 @@ private struct GroupHeader: View {
                         }
                     })
             )
-            .help(group.isExpanded ? "Click to collapse \(group.name). Double-click to change its icon and colour."
-                                   : "Click to expand \(group.name). Double-click to change its icon and colour.")
+            .help(group.isExpanded ? "Click to collapse \(group.name). Double-click to change its icon and colour. Drag to reorder."
+                                   : "Click to expand \(group.name). Double-click to change its icon and colour. Drag to reorder.")
+            // Dragging the group's name reorders groups.
+            .draggable(SnippetDrag.groupPayload(for: group.id)) {
+                Label(group.name, systemImage: IconKind.isEmoji(group.symbol) ? "folder.fill" : group.symbol)
+                    .padding(6)
+                    .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
+            }
+
+            Button {
+                state.newSnippet(in: group.id)
+            } label: {
+                Image(systemName: "plus.circle")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .frame(width: 26, height: 24)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help("New Snippet in \(group.name)")
+            .accessibilityLabel("New snippet in \(group.name)")
 
             Menu {
                 GroupActionsMenu(group: group)
@@ -470,6 +498,7 @@ private struct GroupHeader: View {
         .accessibilityAction(named: group.isEnabled ? "Turn Off" : "Turn On") {
             state.store.updateGroup(group.id) { $0.isEnabled.toggle() }
         }
+        .accessibilityAction(named: "New Snippet") { state.newSnippet(in: group.id) }
         .accessibilityAction(named: "Rename") { state.renamingGroupID = group.id }
         .accessibilityAction(named: "Change Colour") { state.colorPickerGroupID = group.id }
     }
@@ -694,14 +723,67 @@ private struct AccessCallout: View {
 
 // MARK: - Drag and drop
 
+/// What a drag carries inside Quill: one or more snippets, or a group.
 enum SnippetDrag {
     static let prefix = "quill-snippet:"
+    static let groupPrefix = "quill-group:"
 
     static func payload(for id: Snippet.ID) -> String { prefix + id.uuidString }
 
-    static func snippetID(from payload: String) -> Snippet.ID? {
-        guard payload.hasPrefix(prefix) else { return nil }
-        return UUID(uuidString: String(payload.dropFirst(prefix.count)))
+    static func payload(for ids: [Snippet.ID]) -> String { prefix + ids.map(\.uuidString).joined(separator: ",") }
+
+    static func groupPayload(for id: SnippetGroup.ID) -> String { groupPrefix + id.uuidString }
+
+    static func snippetIDs(from payload: String) -> [Snippet.ID] {
+        guard payload.hasPrefix(prefix) else { return [] }
+        return payload.dropFirst(prefix.count).split(separator: ",").compactMap { UUID(uuidString: String($0)) }
+    }
+
+    static func snippetID(from payload: String) -> Snippet.ID? { snippetIDs(from: payload).first }
+
+    static func groupID(from payload: String) -> SnippetGroup.ID? {
+        guard payload.hasPrefix(groupPrefix) else { return nil }
+        return UUID(uuidString: String(payload.dropFirst(groupPrefix.count)))
+    }
+
+    static func isQuillPayload(_ payload: String) -> Bool {
+        payload.hasPrefix(prefix) || payload.hasPrefix(groupPrefix)
+    }
+}
+
+/// A snippet row as a drop target: snippets dropped on it move to just above it, in its group.
+/// A line above the row shows where they'll go.
+private struct SnippetRowDrop: ViewModifier {
+    let snippet: Snippet
+    @Environment(AppState.self) private var state
+    @State private var isTargeted = false
+
+    func body(content: Content) -> some View {
+        content
+            .overlay(alignment: .top) {
+                if isTargeted {
+                    Capsule()
+                        .fill(Color.accentColor)
+                        .frame(height: 3)
+                        .offset(y: -3)
+                        .transition(.opacity)
+                }
+            }
+            .dropDestination(for: String.self) { items, _ in
+                let ids = items.flatMap(SnippetDrag.snippetIDs(from:))
+                if !ids.isEmpty {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        state.store.move(Set(ids), before: snippet.id, in: snippet.groupID)
+                        state.sortOrder = .manual
+                    }
+                    return true
+                }
+                // Text from another app becomes a new snippet in this snippet's group.
+                guard items.allSatisfy({ !SnippetDrag.isQuillPayload($0) }) else { return false }
+                return state.handleDrop(items, into: snippet.groupID)
+            } isTargeted: { targeted in
+                withAnimation(.easeOut(duration: 0.12)) { isTargeted = targeted }
+            }
     }
 }
 
@@ -719,7 +801,22 @@ private struct DropHeader<Content: View>: View {
             .padding(.horizontal, 4)
             .background(isTargeted ? Color.accentColor.opacity(0.2) : .clear, in: RoundedRectangle(cornerRadius: 6))
             .dropDestination(for: String.self) { items, _ in
-                state.handleDrop(items, into: groupID)
+                // A group dropped on another group's header moves just above it.
+                if let dragged = items.lazy.compactMap(SnippetDrag.groupID(from:)).first {
+                    guard let groupID, dragged != groupID else { return false }
+                    withAnimation(.snappy(duration: 0.25)) { state.store.moveGroup(dragged, before: groupID) }
+                    return true
+                }
+                // Snippets dropped on a header go to the end of that group.
+                let ids = items.flatMap(SnippetDrag.snippetIDs(from:))
+                if !ids.isEmpty {
+                    withAnimation(.snappy(duration: 0.25)) {
+                        state.store.move(Set(ids), before: nil, in: groupID)
+                        if let groupID { state.store.updateGroup(groupID) { $0.isExpanded = true } }
+                    }
+                    return true
+                }
+                return state.handleDrop(items, into: groupID)
             } isTargeted: { isTargeted = $0 }
     }
 }

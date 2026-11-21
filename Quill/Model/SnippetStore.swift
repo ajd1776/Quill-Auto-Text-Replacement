@@ -236,6 +236,35 @@ final class SnippetStore {
         )
     }
 
+    /// Puts snippets just before another snippet (or at the end of a group when `target` is nil),
+    /// moving them into that snippet's group. Keeps their order relative to each other.
+    func move(_ ids: Set<Snippet.ID>, before target: Snippet.ID?, in groupID: SnippetGroup.ID?) {
+        guard !ids.isEmpty, target.map({ !ids.contains($0) }) ?? true else { return }
+        var moving = snippets.filter { ids.contains($0.id) }
+        guard !moving.isEmpty else { return }
+        let destinationGroup = target.flatMap(snippet)?.groupID ?? groupID
+        for index in moving.indices { moving[index].groupID = destinationGroup }
+        var rest = snippets.filter { !ids.contains($0.id) }
+        let insertAt: Int
+        if let target, let index = rest.firstIndex(where: { $0.id == target }) {
+            insertAt = index
+        } else if let last = rest.lastIndex(where: { $0.groupID == destinationGroup }) {
+            insertAt = last + 1
+        } else {
+            insertAt = rest.endIndex
+        }
+        rest.insert(contentsOf: moving, at: insertAt)
+        snippets = rest
+    }
+
+    /// Puts a group just before another group, or last when `target` is nil.
+    func moveGroup(_ id: SnippetGroup.ID, before target: SnippetGroup.ID?) {
+        guard id != target, let index = groups.firstIndex(where: { $0.id == id }) else { return }
+        let group = groups.remove(at: index)
+        let insertAt = target.flatMap { t in groups.firstIndex { $0.id == t } } ?? groups.endIndex
+        groups.insert(group, at: insertAt)
+    }
+
     func move(_ ids: Set<Snippet.ID>, to groupID: SnippetGroup.ID?) {
         for index in snippets.indices where ids.contains(snippets[index].id) {
             snippets[index].groupID = groupID
