@@ -200,6 +200,13 @@ struct LibraryView: View {
             }
         }
         .listStyle(.sidebar)
+        // Double-clicking a snippet opens Icon and Colour. The menu stays empty so each row keeps its own.
+        .contextMenu(forSelectionType: SidebarItem.self) { _ in
+        } primaryAction: { items in
+            if items.count == 1, let id = items.first?.snippetID {
+                state.appearanceTarget = .snippet(id)
+            }
+        }
         .overlay {
             if store.snippets.isEmpty {
                 ContentUnavailableView {
@@ -410,12 +417,17 @@ private struct GroupHeader: View {
             }
             .frame(maxHeight: .infinity)
             .contentShape(Rectangle())
-            .onTapGesture {
-                withAnimation(.snappy(duration: 0.2)) {
-                    state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
-                }
-            }
-            .help(group.isExpanded ? "Click to collapse \(group.name)" : "Click to expand \(group.name)")
+            // Double-click edits the group's icon and colour; a single click collapses or expands it.
+            .gesture(
+                TapGesture(count: 2).onEnded { state.appearanceTarget = .group(group.id) }
+                    .exclusively(before: TapGesture().onEnded {
+                        withAnimation(.snappy(duration: 0.2)) {
+                            state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
+                        }
+                    })
+            )
+            .help(group.isExpanded ? "Click to collapse \(group.name). Double-click to change its icon and colour."
+                                   : "Click to expand \(group.name). Double-click to change its icon and colour.")
 
             Menu {
                 GroupActionsMenu(group: group)

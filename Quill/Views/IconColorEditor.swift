@@ -372,13 +372,12 @@ struct IconTile: View {
                 Text(symbol).font(.system(size: size * 0.55))
             } else {
                 Image(systemName: symbol)
-                    .font(.system(size: size * 0.44, weight: .semibold))
-                    .foregroundStyle(color)
+                    .font(.system(size: size * 0.46, weight: .semibold))
+                    .foregroundStyle(.white)
             }
         }
         .frame(width: size, height: size)
-        .background(color.opacity(0.18), in: RoundedRectangle(cornerRadius: size * 0.24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: size * 0.24, style: .continuous).strokeBorder(color.opacity(0.5), lineWidth: 1))
+        .background(color, in: RoundedRectangle(cornerRadius: size * 0.28, style: .continuous))
         .accessibilityHidden(true)
     }
 }
@@ -419,10 +418,9 @@ private struct IconChoice: View {
         Button(action: action) {
             Image(systemName: symbol)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isSelected ? tint : .primary)
+                .foregroundStyle(isSelected ? .white : .primary)
                 .frame(width: 32, height: 32)
-                .background(isSelected ? tint.opacity(0.2) : Color.secondary.opacity(0.16), in: Circle())
-                .overlay(Circle().strokeBorder(isSelected ? tint : .clear, lineWidth: 1.5))
+                .background(isSelected ? tint : Color.secondary.opacity(0.16), in: Circle())
                 .contentShape(Circle())
         }
         .buttonStyle(.plain)

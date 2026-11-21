@@ -145,6 +145,24 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(row("thx").waitForExistence(timeout: 3), "…and doesn't collapse the group")
     }
 
+    func testDoubleClickOpensIconAndColour() {
+        launch()
+        let eml = row("eml")
+        XCTAssertTrue(eml.waitForExistence(timeout: 5))
+        eml.doubleClick()
+        let name = app.textFields["appearance-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Double-clicking a snippet opens Icon and Colour")
+        XCTAssertEqual(name.value as? String, "eml")
+        app.buttons["Cancel"].firstMatch.click()
+
+        let shop = header("Shop")
+        shop.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).doubleClick()
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Double-clicking a group opens Icon and Colour")
+        XCTAssertEqual(name.value as? String, "Shop")
+        app.buttons["Cancel"].firstMatch.click()
+        XCTAssertTrue(row("thx").waitForExistence(timeout: 3), "Double-clicking doesn't collapse the group")
+    }
+
     func testGroupSwitch() {
         launch()
         let shop = header("Shop")
