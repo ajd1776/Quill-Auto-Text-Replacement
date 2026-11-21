@@ -64,11 +64,30 @@ final class QuillUITests: XCTestCase {
     func testNewSnippet() {
         launch()
         app.typeKey("n", modifierFlags: .command)
+        let name = app.textFields["appearance-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "New Snippet opens the icon and colour sheet first")
+        XCTAssertFalse(app.buttons["Create"].isEnabled, "Create waits for a shortcut")
+        name.click()
+        name.typeText("zzq")
+        app.buttons["Create"].click()
         let field = app.textFields["Shortcut"].firstMatch
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
-        field.click()
-        field.typeText("zzq")
-        XCTAssertTrue(row("zzq").waitForExistence(timeout: 5), "The new shortcut should appear in the sidebar")
+        XCTAssertTrue(field.waitForExistence(timeout: 5), "The new snippet opens in the editor")
+        XCTAssertEqual(field.value as? String, "zzq")
+        XCTAssertTrue(row("zzq").exists, "It appears in the sidebar")
+    }
+
+    func testIconOpensAppearanceSheet() {
+        launch()
+        let shop = header("Shop")
+        XCTAssertTrue(shop.waitForExistence(timeout: 5))
+        shop.rightClick()
+        app.menuItems["Icon and Colour…"].firstMatch.click()
+        let name = app.textFields["appearance-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5))
+        XCTAssertEqual(name.value as? String, "Shop")
+        app.buttons["Purple"].firstMatch.click()
+        app.buttons["Save"].click()
+        XCTAssertFalse(name.waitForExistence(timeout: 2), "Saving closes the sheet")
     }
 
     func testRowSwitchTurnsSnippetOff() {

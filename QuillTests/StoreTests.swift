@@ -106,6 +106,22 @@ final class StoreTests: XCTestCase {
         XCTAssertEqual(imported.flatMap(store.group(for:))?.name, "Imported")
     }
 
+    func testSnippetColourFallsBackToGroup() {
+        let group = store.addGroup(named: "Tinted")
+        store.updateGroup(group.id) { $0.color = .green }
+        var snippet = store.add(trigger: "tint", expansion: "x", groupID: group.id)
+        XCTAssertEqual(store.tint(for: snippet), GroupColor.green.color, "No colour of its own: the group's")
+        store.update(snippet.id) { $0.color = "purple" }
+        snippet = store.snippet(snippet.id)!
+        XCTAssertEqual(store.tint(for: snippet), GroupColor.purple.color, "Its own system colour wins")
+        XCTAssertNotNil(QuillColor.resolve("#336699"))
+        XCTAssertNil(QuillColor.resolve("not a colour"))
+        XCTAssertNil(QuillColor.resolve(nil))
+        XCTAssertEqual(store.group(group.id)?.colorValue, "green")
+        store.updateGroup(group.id) { $0.customColor = "#336699" }
+        XCTAssertEqual(store.group(group.id)?.colorValue, "#336699", "A custom colour wins over the preset")
+    }
+
     func testStarterPacks() {
         let pack = StarterPack.all[0]
         XCTAssertNil(store.installedGroup(for: pack))

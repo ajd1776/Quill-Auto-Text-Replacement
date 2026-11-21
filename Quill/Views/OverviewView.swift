@@ -223,8 +223,8 @@ struct OverviewView: View {
                         state.selection = [.snippet(snippet.id)]
                     } label: {
                         BarRow(title: snippet.trigger, monospaced: true, value: snippet.useCount,
-                               fraction: Double(snippet.useCount) / Double(most), color: group?.tint ?? .accentColor) {
-                            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint, size: 18)
+                               fraction: Double(snippet.useCount) / Double(most), color: store.tint(for: snippet)) {
+                            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: store.tint(for: snippet), size: 18)
                         }
                         .contentShape(Rectangle())
                     }
@@ -390,7 +390,7 @@ private struct TidyRow: View {
     var body: some View {
         let group = state.store.group(for: snippet)
         HStack(spacing: 10) {
-            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint, size: 24)
+            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: state.store.tint(for: snippet), size: 24)
             VStack(alignment: .leading, spacing: 1) {
                 Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
                     .font(.callout.monospaced().weight(.semibold))

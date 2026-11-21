@@ -44,6 +44,20 @@ extension Color {
     }
 }
 
+/// A colour as Quill stores it: one of the system colours by name, or #RRGGBB.
+enum QuillColor {
+    static func resolve(_ value: String?) -> Color? {
+        guard let value else { return nil }
+        if let system = GroupColor(rawValue: value) { return system.color }
+        return Color(hex: value)
+    }
+}
+
+extension SnippetGroup {
+    /// The group's colour in Quill's stored form: a system colour name, or the custom #RRGGBB.
+    var colorValue: String { customColor ?? color.rawValue }
+}
+
 /// An icon is either an SF Symbol name or a single emoji.
 enum IconKind {
     static func isEmoji(_ icon: String) -> Bool {

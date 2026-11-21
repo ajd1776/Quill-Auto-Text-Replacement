@@ -57,7 +57,7 @@ struct CommandPalette: View {
                             title: snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger,
                             subtitle: snippet.preview,
                             symbol: snippet.symbol ?? group?.symbol ?? "text.quote",
-                            color: group?.tint ?? .accentColor) {
+                            color: state.store.tint(for: snippet)) {
                     state.selection = [.snippet(snippet.id)]
                 }
             }

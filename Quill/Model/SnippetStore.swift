@@ -263,6 +263,11 @@ final class SnippetStore {
         }
     }
 
+    /// A snippet's colour: its own, else its group's, else the accent colour.
+    func tint(for snippet: Snippet) -> Color {
+        QuillColor.resolve(snippet.color) ?? group(for: snippet)?.tint ?? .accentColor
+    }
+
     func isActive(_ snippet: Snippet) -> Bool {
         snippet.isEnabled && (snippet.groupID.flatMap(group)?.isEnabled ?? true)
     }

@@ -10,13 +10,12 @@ struct SnippetDetailView: View {
     @Environment(AppState.self) private var state
     @FocusState private var isTriggerFocused: Bool
     @State private var editor = TokenEditorController()
-    @State private var isPickingIcon = false
 
     private let inset: CGFloat = 28
     private let editorFontSize: CGFloat = 15
 
     private var group: SnippetGroup? { state.store.group(for: snippet) }
-    private var tint: Color { group?.tint ?? .accentColor }
+    private var tint: Color { state.store.tint(for: snippet) }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -55,7 +54,7 @@ struct SnippetDetailView: View {
 
         return HStack(alignment: .center, spacing: 16) {
             Button {
-                isPickingIcon = true
+                state.appearanceTarget = .snippet(snippet.id)
             } label: {
                 SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: tint, size: 52)
                     .overlay(alignment: .bottomTrailing) {
@@ -66,11 +65,8 @@ struct SnippetDetailView: View {
                     }
             }
             .buttonStyle(.plain)
-            .help("Change Icon")
-            .accessibilityLabel("Change icon")
-            .popover(isPresented: $isPickingIcon, arrowEdge: .bottom) {
-                IconPicker(current: snippet.symbol, tint: tint, defaultTitle: "Use Group Icon") { snippet.symbol = $0 }
-            }
+            .help("Change Icon and Colour")
+            .accessibilityLabel("Change icon and colour")
 
             VStack(alignment: .leading, spacing: 5) {
                 TextField("Shortcut", text: $snippet.trigger, prompt: Text("Shortcut"))

@@ -108,6 +108,14 @@ private struct MenuBarLabel: View {
                 if let pick = snippets.first(where: { $0.trigger == "thx" || $0.trigger == "eAD" }) ?? snippets.first {
                     state.selection = [.snippet(pick.id)]
                 }
+            case "appearance":
+                openWindow(id: WindowID.library)
+                if let group = state.store.groups.first {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.appearanceTarget = .group(group.id) }
+                }
+            case "newsnippet":
+                openWindow(id: WindowID.library)
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.newSnippet() }
             case "welcome":
                 openWindow(id: WindowID.welcome)
             case "general", "suggestions", "effects", "shortcuts", "backup", "about":

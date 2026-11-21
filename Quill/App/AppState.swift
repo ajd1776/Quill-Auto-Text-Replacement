@@ -532,17 +532,17 @@ final class AppState {
         return selectedSnippetIDs.first.flatMap { store.snippet($0)?.groupID }
     }
 
+    /// The Icon and Colour sheet, also the first step of a new snippet or group.
+    var appearanceTarget: AppearanceTarget?
+
+    /// Starts a new snippet: the sheet asks for its shortcut, colour and icon, then it opens in the window.
     func newSnippet(in groupID: SnippetGroup.ID?? = nil) {
-        let snippet = store.add(groupID: groupID ?? currentGroupID)
-        if let groupID = snippet.groupID { store.updateGroup(groupID) { $0.isExpanded = true } }
-        selection = [.snippet(snippet.id)]
+        appearanceTarget = .newSnippet(groupID ?? currentGroupID)
     }
 
+    /// Starts a new group: the sheet asks for its name, colour and icon.
     func newGroup() {
-        let group = store.addGroup()
-        page = .snippets
-        scope = .group(group.id)
-        renamingGroupID = group.id
+        appearanceTarget = .newGroup
     }
 
     /// Dropped snippets move into the group; dropped text from another app becomes a new snippet there.

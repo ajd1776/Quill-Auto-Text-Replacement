@@ -70,8 +70,8 @@ struct SnippetActionsMenu: View {
         }
 
         if ids.count == 1, let id = ids.first {
-            Button("Choose Icon…", systemImage: "face.smiling") {
-                state.iconPickerTarget = .snippet(id)
+            Button("Icon and Colour…", systemImage: "paintpalette") {
+                state.appearanceTarget = .snippet(id)
             }
         }
 
@@ -122,12 +122,8 @@ struct GroupActionsMenu: View {
 
         Divider()
 
-        Button("Colour…", systemImage: "paintpalette") {
-            state.colorPickerGroupID = group.id
-        }
-
-        Button("Choose Icon…", systemImage: "face.smiling") {
-            state.iconPickerTarget = .group(group.id)
+        Button("Icon and Colour…", systemImage: "paintpalette") {
+            state.appearanceTarget = .group(group.id)
         }
 
         Divider()

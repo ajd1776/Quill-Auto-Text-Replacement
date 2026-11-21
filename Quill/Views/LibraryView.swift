@@ -55,6 +55,10 @@ struct LibraryView: View {
                     .environment(state)
             }
         }
+        .sheet(item: $state.appearanceTarget) { target in
+            IconColorEditor(target: target)
+                .environment(state)
+        }
         .sheet(isPresented: $state.isShowingPacks) {
             PackGallery()
                 .environment(state)
@@ -174,6 +178,7 @@ struct LibraryView: View {
                         .accessibilityAction(named: ungroupedExpanded ? "Collapse" : "Expand") { ungroupedExpanded.toggle() }
                     }
                 }
+                .collapsible(false)
             }
 
             ForEach(store.groups) { group in
@@ -186,6 +191,7 @@ struct LibraryView: View {
                             GroupHeader(group: group, count: store.snippets(in: group.id).count)
                         }
                     }
+                    .collapsible(false)
                 }
             }
         }
@@ -228,7 +234,7 @@ struct LibraryView: View {
                         state.isShowingPacks = true
                     }
                 } label: {
-                    Label("New Snippet", systemImage: "square.and.pencil")
+                    Label("New Snippet", systemImage: "plus.circle.fill")
                 } primaryAction: {
                     searchText = ""
                     state.newSnippet()
@@ -254,6 +260,7 @@ struct LibraryView: View {
             SnippetRow(
                 snippet: snippet,
                 group: store.group(for: snippet),
+                tint: store.tint(for: snippet),
                 isEnabled: store.enabledBinding(for: snippet.id),
                 hasProblem: store.problem(with: snippet) != nil
             )
@@ -348,22 +355,16 @@ private struct GroupHeader: View {
     let group: SnippetGroup
     let count: Int
     @Environment(AppState.self) private var state
-    @State private var isPickingIcon = false
 
     var body: some View {
         HStack(spacing: 8) {
             Button {
-                isPickingIcon = true
+                state.appearanceTarget = .group(group.id)
             } label: {
                 SnippetIcon(symbol: group.symbol, color: group.tint, size: 24)
             }
             .buttonStyle(.plain)
-            .help("Change Icon")
-            .popover(isPresented: $isPickingIcon, arrowEdge: .bottom) {
-                IconPicker(current: group.symbol, tint: group.tint) { icon in
-                    if let icon { state.store.updateGroup(group.id) { $0.symbol = icon } }
-                }
-            }
+            .help("Change Icon and Colour")
 
             Text(group.name)
                 .font(.subheadline.weight(.semibold))
@@ -464,6 +465,8 @@ private struct SidebarLink: View {
 private struct SnippetRow: View {
     let snippet: Snippet
     let group: SnippetGroup?
+    let tint: Color
+    @Environment(AppState.self) private var state
     @Binding var isEnabled: Bool
     let hasProblem: Bool
 
@@ -471,7 +474,14 @@ private struct SnippetRow: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint ?? .accentColor, size: 30)
+            Button {
+                state.appearanceTarget = .snippet(snippet.id)
+            } label: {
+                SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: tint, size: 30)
+            }
+            .buttonStyle(.plain)
+            .help("Change Icon and Colour")
+            .accessibilityLabel("Icon and colour for \(snippet.trigger)")
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {

@@ -167,10 +167,12 @@ struct Snippet: Identifiable, Codable, Hashable {
     var appBundleIDs: [String] = []
     /// Also expand when the shortcut is typed in other capitals, adapting the text to match.
     var matchesAnyCase = false
+    /// The icon's colour: a system colour name or #RRGGBB. nil uses the group's colour.
+    var color: String?
 
     enum CodingKeys: String, CodingKey {
         case id, trigger, expansion, mode, isEnabled, created, animation, useCount, lastUsed, groupID, symbol
-        case appBundleIDs, matchesAnyCase
+        case appBundleIDs, matchesAnyCase, color
     }
 
     /// Whether this snippet may expand in the app with this bundle identifier.
@@ -213,6 +215,7 @@ extension Snippet {
         symbol = try container.decodeIfPresent(String.self, forKey: .symbol)
         appBundleIDs = try container.decodeIfPresent([String].self, forKey: .appBundleIDs) ?? []
         matchesAnyCase = try container.decodeIfPresent(Bool.self, forKey: .matchesAnyCase) ?? false
+        color = try container.decodeIfPresent(String.self, forKey: .color)
     }
 }
 

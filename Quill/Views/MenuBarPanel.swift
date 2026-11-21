@@ -322,7 +322,7 @@ private struct PanelRow: View {
         HStack(spacing: 10) {
             Button(action: insert) {
                 HStack(spacing: 10) {
-                    SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: group?.tint ?? .accentColor, size: 28)
+                    SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: state.store.tint(for: snippet), size: 28)
                     VStack(alignment: .leading, spacing: 1) {
                         Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
                             .font(.callout.monospaced().weight(.semibold))
