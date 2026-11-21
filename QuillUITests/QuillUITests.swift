@@ -120,6 +120,18 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(row("thx").waitForExistence(timeout: 5), "Expanding Shop shows them again")
     }
 
+    func testClickingGroupHeaderCollapses() {
+        launch()
+        XCTAssertTrue(row("thx").waitForExistence(timeout: 5))
+        let shop = header("Shop")
+        XCTAssertTrue(shop.waitForExistence(timeout: 5))
+        // Click the middle of the header, away from its buttons and switch.
+        shop.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).click()
+        XCTAssertFalse(row("thx").waitForExistence(timeout: 2), "Clicking the header collapses the group")
+        shop.coordinate(withNormalizedOffset: CGVector(dx: 0.45, dy: 0.5)).click()
+        XCTAssertTrue(row("thx").waitForExistence(timeout: 5), "Clicking again expands it")
+    }
+
     func testGroupSwitch() {
         launch()
         let shop = header("Shop")
@@ -141,8 +153,10 @@ final class QuillUITests: XCTestCase {
         let off = app.buttons["Turn Off"].firstMatch
         XCTAssertTrue(off.waitForExistence(timeout: 5), "Two selected snippets show actions for both")
         off.click()
-        XCTAssertEqual(sidebar.checkBoxes["Turn eml on or off"].value as? Int, 0)
-        XCTAssertEqual(sidebar.checkBoxes["Turn sig on or off"].value as? Int, 0)
+        for trigger in ["eml", "sig"] {
+            expectation(for: NSPredicate(format: "value == 0"), evaluatedWith: sidebar.checkBoxes["Turn \(trigger) on or off"])
+        }
+        waitForExpectations(timeout: 5)
     }
 
     func testSearch() {

@@ -171,6 +171,10 @@ struct LibraryView: View {
                             Spacer()
                             DisclosureArrow(isExpanded: $ungroupedExpanded)
                         }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            withAnimation(.snappy(duration: 0.2)) { ungroupedExpanded.toggle() }
+                        }
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(store.groups.isEmpty ? "Snippets" : "Ungrouped")
                         .accessibilityValue(ungroupedExpanded ? "expanded" : "collapsed")
@@ -220,39 +224,57 @@ struct LibraryView: View {
         }
         .toolbar {
             ToolbarItemGroup {
-                // A split button: click for a new snippet, or open the arrow for a new group.
-                Menu {
-                    Button("New Snippet", systemImage: "square.and.pencil") {
-                        searchText = ""
-                        state.newSnippet()
-                    }
-                    Button("New Group", systemImage: "folder.badge.plus") {
-                        state.newGroup()
-                    }
-                    Divider()
-                    Button("Add Starter Pack…", systemImage: "shippingbox") {
-                        state.isShowingPacks = true
-                    }
-                } label: {
-                    Label("New Snippet", systemImage: "plus.circle.fill")
-                } primaryAction: {
+                Button("New Snippet", systemImage: "plus.circle.fill") {
                     searchText = ""
                     state.newSnippet()
                 }
-                .help("New Snippet (⌘N). Open the arrow for more.")
+                .help("New Snippet (⌘N)")
 
                 Button("New Group", systemImage: "folder.badge.plus") {
                     state.newGroup()
                 }
                 .help("New Group (⇧⌘N)")
 
+                ToolbarDivider()
+
                 Button("Add Starter Pack", systemImage: "shippingbox") {
                     state.isShowingPacks = true
                 }
                 .help("Add a Starter Pack")
+
+                ToolbarDivider()
+
+                Menu {
+                    Button("New Snippet", systemImage: "plus.circle") {
+                        searchText = ""
+                        state.newSnippet()
+                    }
+                    Button("New Group", systemImage: "folder.badge.plus") { state.newGroup() }
+                    Divider()
+                    Button("Add Starter Pack…", systemImage: "shippingbox") { state.isShowingPacks = true }
+                    Button("Import Text Replacements…", systemImage: "square.and.arrow.down") { state.beginSystemImport() }
+                    Button("Import Snippets…", systemImage: "tray.and.arrow.down") { state.isShowingFileImporter = true }
+                } label: {
+                    // A fixed-size image: the toolbar would scale a symbol up to full size.
+                    Image(nsImage: Self.smallChevron)
+                        .accessibilityLabel("More Ways to Add Snippets")
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("More Ways to Add Snippets")
             }
         }
     }
+
+    /// The small dropdown arrow, like the one on a split button.
+    private static let smallChevron: NSImage = {
+        let config = NSImage.SymbolConfiguration(pointSize: 9, weight: .bold)
+        let image = NSImage(systemSymbolName: "chevron.down", accessibilityDescription: "More")?
+            .withSymbolConfiguration(config) ?? NSImage()
+        image.isTemplate = true
+        return image
+    }()
 
     @ViewBuilder
     private func rows(for snippets: [Snippet]) -> some View {
@@ -351,6 +373,17 @@ struct LibraryView: View {
 
 // MARK: - Rows
 
+/// A thin vertical line between groups of toolbar buttons.
+private struct ToolbarDivider: View {
+    var body: some View {
+        Rectangle()
+            .fill(.separator)
+            .frame(width: 1, height: 16)
+            .padding(.horizontal, 4)
+            .accessibilityHidden(true)
+    }
+}
+
 private struct GroupHeader: View {
     let group: SnippetGroup
     let count: Int
@@ -401,6 +434,13 @@ private struct GroupHeader: View {
         .contextMenu {
             GroupActionsMenu(group: group)
         }
+        // Clicking anywhere on the header (outside its buttons and switch) collapses or expands it.
+        .simultaneousGesture(TapGesture().onEnded {
+            withAnimation(.snappy(duration: 0.2)) {
+                state.store.updateGroup(group.id) { $0.isExpanded.toggle() }
+            }
+        })
+        .help(group.isExpanded ? "Click to collapse \(group.name)" : "Click to expand \(group.name)")
         // macOS reads a sidebar section header as one element, so its controls are offered as named actions.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(group.name) group")

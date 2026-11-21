@@ -83,7 +83,7 @@ struct IconColorEditor: View {
             }
             .padding(16)
         }
-        .frame(width: 460, height: 660)
+        .frame(width: 480, height: 700)
         .navigationTitle(title)
         .onAppear(perform: load)
     }
@@ -235,7 +235,7 @@ struct IconColorEditor: View {
 
     private var iconSection: some View {
         Section {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 6), spacing: 12) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 9), spacing: 8) {
                 ForEach(Self.icons, id: \.self) { icon in
                     IconChoice(symbol: icon, tint: tint, isSelected: shownSymbol == icon) {
                         symbol = icon
@@ -269,12 +269,29 @@ struct IconColorEditor: View {
         }
     }
 
+    /// A broad set of common SF Symbols, grouped loosely by theme, so most icons are one click away.
     static let icons = [
-        "folder.fill", "archivebox.fill", "tray.fill", "shippingbox.fill", "tag.fill", "bookmark.fill",
-        "star.fill", "heart.fill", "flag.fill", "bolt.fill", "flame.fill", "sparkles",
-        "person.fill", "envelope.fill", "phone.fill", "at", "link", "signature",
-        "text.quote", "calendar", "creditcard.fill", "cart.fill", "house.fill", "building.2.fill",
-        "briefcase.fill", "mappin.and.ellipse", "globe", "lock.fill", "chevron.left.forwardslash.chevron.right", "gearshape.fill",
+        // Folders and objects
+        "folder.fill", "archivebox.fill", "tray.fill", "tray.full.fill", "shippingbox.fill", "tag.fill", "bookmark.fill", "paperclip", "doc.fill",
+        "doc.text.fill", "note.text", "list.bullet", "checklist", "square.grid.2x2.fill", "rectangle.stack.fill", "books.vertical.fill", "book.fill", "newspaper.fill",
+        // Marks
+        "star.fill", "heart.fill", "flag.fill", "bolt.fill", "flame.fill", "sparkles", "pin.fill", "bell.fill", "lightbulb.fill",
+        "crown.fill", "trophy.fill", "rosette", "checkmark.seal.fill", "exclamationmark.triangle.fill", "questionmark.circle.fill", "info.circle.fill", "number", "textformat",
+        // People and communication
+        "person.fill", "person.2.fill", "person.crop.circle.fill", "envelope.fill", "phone.fill", "message.fill", "bubble.left.fill", "at", "link",
+        "signature", "text.quote", "quote.bubble.fill", "megaphone.fill", "paperplane.fill", "hand.wave.fill", "hand.thumbsup.fill", "face.smiling", "video.fill",
+        // Time and money
+        "calendar", "clock.fill", "alarm.fill", "hourglass", "timer", "creditcard.fill", "banknote.fill", "sterlingsign.circle.fill", "dollarsign.circle.fill",
+        "cart.fill", "bag.fill", "basket.fill", "gift.fill", "percent", "chart.bar.fill", "chart.pie.fill", "receipt", "barcode",
+        // Places and travel
+        "house.fill", "building.2.fill", "building.columns.fill", "storefront.fill", "mappin.and.ellipse", "map.fill", "globe", "location.fill", "car.fill",
+        "airplane", "tram.fill", "bicycle", "figure.walk", "fork.knife", "cup.and.saucer.fill", "leaf.fill", "sun.max.fill", "moon.fill",
+        // Work and tools
+        "briefcase.fill", "hammer.fill", "wrench.and.screwdriver.fill", "paintbrush.fill", "pencil", "scissors", "ruler.fill", "printer.fill", "keyboard",
+        "desktopcomputer", "laptopcomputer", "iphone", "chevron.left.forwardslash.chevron.right", "terminal.fill", "curlybraces", "gearshape.fill", "lock.fill", "key.fill",
+        // Health and fun
+        "cross.case.fill", "pills.fill", "stethoscope", "figure.run", "dumbbell.fill", "sportscourt.fill", "music.note", "gamecontroller.fill", "camera.fill",
+        "photo.fill", "film.fill", "headphones", "tshirt.fill", "pawprint.fill", "graduationcap.fill", "atom", "shield.fill", "lifepreserver.fill",
     ]
 
     // MARK: Load and save
@@ -401,9 +418,9 @@ private struct IconChoice: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: symbol)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(isSelected ? tint : .primary)
-                .frame(width: 40, height: 40)
+                .frame(width: 32, height: 32)
                 .background(isSelected ? tint.opacity(0.2) : Color.secondary.opacity(0.16), in: Circle())
                 .overlay(Circle().strokeBorder(isSelected ? tint : .clear, lineWidth: 1.5))
                 .contentShape(Circle())
