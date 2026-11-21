@@ -11,10 +11,10 @@
 </div>
 
 <p align="center">
-  <img src="docs/media/hero.gif" width="820" alt="Typing in a draft: omw expands to on my way, eml to an email address, and si opens the suggestion bubble to pick a signature">
+  <img src="docs/media/hero.gif" width="820" alt="Typing in a draft: omw expands to on my way, and si opens the suggestion bubble to pick a signature">
 </p>
 
-<p align="center"><a href="docs/media/demo.mp4"><b>▶ Watch the one-minute demo</b></a></p>
+<p align="center"><a href="docs/media/demo.mp4"><b>▶ Watch the 30-second demo</b></a></p>
 
 Quill is a system-wide text expander that lives in the menu bar. You type `eml` and get `name@example.com`, in any app. It works like macOS Text Replacements, but works in every app, shows a suggestion bubble as you type, supports tokens and fill-in fields, and keeps everything in a local JSON file. Native SwiftUI, no dependencies, no account.
 
@@ -29,75 +29,56 @@ Requires macOS 15 or later (Liquid Glass on macOS 26). Universal build for Apple
 
 ## Features
 
-### Expansion
-- **Works everywhere.** Native apps, browsers and Electron apps. Shortcuts are case-sensitive, whole-word matches.
-- **Your choice of trigger.** Each snippet expands after a space, punctuation or Return, or the moment you finish typing the shortcut.
-- **Undo.** Press Delete straight after an expansion to get back what you typed.
-- **Case matching.** `EML` gives ALL CAPS and `Eml` gives Capitalised, if you turn it on for that snippet.
-- **Per-app limits.** Make a snippet work only in the apps you choose, or pause Quill in an app entirely.
+The most useful first:
 
-### Suggestions and tokens
-- **Suggestion bubble.** A bubble appears above the text you're typing, like the macOS replacement bubble. Space accepts an exact match, Tab accepts the highlighted one, ↑ ↓ choose, Esc dismisses.
-- **Tokens.** `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}`, `{cursor}` and `{input:Label}`.
-- **Fill-in fields.** `{input:Name}` opens a small form before the text goes in.
+- **Expands everywhere.** Type a shortcut in any app (native, browser or Electron) and it becomes the full text. Expands after a space, punctuation or Return, or the moment you finish typing it.
+- **Suggestion bubble.** Matching snippets appear above your text as you type. Space accepts an exact match, Tab the highlighted one, ↑ ↓ choose, Esc dismisses.
+- **Tokens and fill-in fields.** `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}` and `{cursor}`, plus `{input:Name}`, which asks for a value in a small form before the text goes in.
+- **On and off in place.** Every snippet and group has its own switch in the sidebar, and Quill itself turns off or pauses from the menu bar (<kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>P</kbd>).
+- **Menu bar panel.** Search your snippets, filter by group, switch them on and off, or click one to type it where you were typing.
+- **Groups, icons and colours.** Collapsible groups, 126 SF Symbols or any emoji, the system colours and your own saved colours, set in one sheet.
+- **Drag to reorder.** Rearrange snippets, move them between groups and reorder groups by dragging.
+- **Bring your snippets.** Import your macOS Text Replacements, or add a starter pack: emoji shortcodes (`:fire:` → 🔥), typo fixes (`teh` → `the`) and date formats (`;dmy` → `18/11/2026`).
+- **Fine control.** Limit a snippet to certain apps, pause Quill in an app, match capitals (`EML` → ALL CAPS), and press Delete straight after an expansion to undo it.
+- **Stats and History.** Keys and time saved, your streak, busiest hours, top apps and snippets, a Tidy Up list, and a searchable log of recent expansions.
+- **13 effects.** Pop Badge, Typewriter, Highlight, Ink Underline, Confetti, Sparkle, Cyber and more, drawn over the text and respecting Reduce Motion.
+- **Keyboard first.** <kbd>⌘</kbd> <kbd>K</kbd> command palette, a global search hotkey, and Shortcuts app actions (Insert Snippet, Get Snippet Text, Add Snippet, Turn Quill On/Off).
+- **Private and local.** One JSON file on your Mac with daily backups and JSON import and export. Password fields are never seen. The only network request is a daily update check against GitHub Releases.
+
+### See it in action
 
 | Suggestion bubble | Fill-in form |
 | --- | --- |
-| <img src="docs/media/bubble.gif" alt="Typing si shows sig and sigw in a bubble above the text; the arrow key picks sigw and Tab inserts it"> | <img src="docs/media/fillin.gif" alt="Typing thx opens a form for Name and Order, then inserts the finished message with confetti"> |
+| <img src="docs/media/bubble.gif" alt="Typing si shows sig and sigw in a bubble above the text; the arrow key picks sigw and Tab inserts the signature"> | <img src="docs/media/fillin.gif" alt="Typing thx opens a form for Name and Order, then inserts the finished message with confetti"> |
 
-### Library
-- **Pages.** Toolbar tabs switch between Snippets, Stats, History and Settings (<kbd>⌘</kbd> <kbd>1</kbd>–<kbd>4</kbd>).
-- **List or grid.** Browse snippets as rows or as cards, sorted by shortcut, most used, recently used or newest.
-- **Editor.** Select a snippet to edit it in sections: Text with a live preview, Behaviour (trigger, capitals, effect with a preview), Organise, Apps, and Usage with a 14-day chart for that snippet.
-- **Bulk actions.** Select several snippets to turn them on or off, move them to a group, set their effect or delete them.
-- **Smart filters.** All, Recently Used, On, Off and With Tokens, plus your own groups, each with a count.
-- **Groups.** Colour (any custom colour), SF Symbol or emoji icon, and an on/off switch for the whole group. Drag snippets between groups, or drop text from another app to make a new snippet.
-- **Command palette.** <kbd>⌘</kbd> <kbd>K</kbd> runs any action or jumps to any snippet.
-- **Starter packs.** Emoji shortcodes (`:fire:` → 🔥), typo fixes (`teh` → `the`) and date formats (`;dmy` → `18/11/2026`). Each one installs as a group you can remove.
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="The Quill window: selecting a snippet, switching one off and on in its row, collapsing the Shop group, the Icon and Colour sheet, then Stats"></p>
 
-<p align="center"><img src="docs/media/tour.gif" width="820" alt="The library window: selecting snippets opens the editor, the grid view, group filters, then the Stats, History and Settings tabs"></p>
-
-### Menu bar
-- **Search panel.** Click the menu bar icon to search, filter by group, switch snippets on and off, or click a snippet to type it into the app you were using.
-- **Quick controls.** Turn Quill on or off, pause for 15 minutes, an hour or until tomorrow, or pause in the current app.
-- **10 menu bar icons.** Pick the one you like in Settings › General. Each shows a slash when Quill is off.
-
-<p align="center"><img src="docs/media/panel.gif" width="360" alt="The menu bar panel: searching for sig, then filtering by the Shop, Code and Personal groups"></p>
-
-### Everything else
-- **13 effects.** Typewriter, Pop Badge, Highlight, Ink Underline, Fade, Slide, Bounce, Sparkle, Confetti, Ripple, Particle Cloud, Cyber, or none. Click-through overlays that respect Reduce Motion.
-
-<p align="center"><img src="docs/media/effects.gif" width="720" alt="Four expansions with the Cyber, Confetti, Ripple and Particle Cloud effects"></p>
-
-- **Stats.** Keys and time saved, your streak, expansions per day over 7, 14 or 30 days, busiest hours, top apps, top snippets, groups, and a Tidy Up list of snippets that are unused or broken.
-- **History.** Recent expansions by day. Search, filter by app or snippet, and copy the text again. It stays on your Mac and can be turned off.
-- **Welcome tour.** Four steps on first launch: Accessibility access, importing your macOS Text Replacements, starter packs and tips.
-- **Shortcuts app.** Turn Quill On/Off, Get Snippet Text, Insert Snippet and Add Snippet actions.
-- **Your data.** One local JSON file, daily backups (last 7), JSON import and export, and import from macOS Text Replacements.
-- **Update check.** Checks GitHub Releases once a day and tells you when a new version is out.
+| Menu bar panel | Effects |
+| --- | --- |
+| <img src="docs/media/panel.gif" width="320" alt="The menu bar panel: searching for sig, then filtering by the Shop group"> | <img src="docs/media/effects.gif" alt="Three expansions with the Cyber, Confetti and Sparkle effects"> |
 
 ## Screenshots
 
-| Snippets and editor | Grid view |
+| Snippets and editor | Icon and Colour |
 | --- | --- |
-| ![Snippets page with the list of snippets and the editor open for thx](docs/screenshots/snippets.png) | ![Snippets shown as cards in a three-column grid](docs/screenshots/grid.png) |
+| ![The sidebar with collapsible groups and on/off switches, and the editor open for thx](docs/screenshots/snippets.png) | ![The Icon and Colour sheet: name, system colours, custom colour and a grid of icons](docs/screenshots/appearance.png) |
 
 | Stats | Settings |
 | --- | --- |
-| ![Stats page: keys saved, tiles for expansions and groups, and a 14-day bar chart](docs/screenshots/stats.png) | ![Settings page with General selected, showing launch at login and the menu bar icon picker](docs/screenshots/settings.png) |
+| ![Stats: keys saved, expansions, streak, a 14-day chart, busiest hours and top apps](docs/screenshots/stats.png) | ![Settings with General selected: launch at login, menu bar icon and updates](docs/screenshots/settings.png) |
 
 | History | Command palette |
 | --- | --- |
-| ![History page listing recent expansions with app and time](docs/screenshots/history.png) | ![Command palette searching actions and snippets](docs/screenshots/palette.png) |
+| ![History listing recent expansions by day with app and time](docs/screenshots/history.png) | ![Command palette searching actions and snippets](docs/screenshots/palette.png) |
 
-| Starter packs | Icon picker |
-| --- | --- |
-| ![Starter pack gallery with emoji, typo and date packs](docs/screenshots/packs.png) | ![Icon picker with SF Symbols and emoji](docs/screenshots/icon-picker.png) |
+| Starter packs |
+| --- |
+| ![Starter pack gallery with emoji, typo and date packs](docs/screenshots/packs.png) |
 
 ## How to use it
 
 1. Open Quill and allow Accessibility access.
-2. Click **+** in the toolbar, type a shortcut such as `eml` and the text it should become.
+2. Click **⊕** in the toolbar, type a shortcut such as `eml`, pick a colour and icon, then type the text it should become.
 3. Type `eml` followed by a space in any app.
 
 | Shortcut | Action |
@@ -105,7 +86,8 @@ Requires macOS 15 or later (Liquid Glass on macOS 26). Universal build for Apple
 | <kbd>⌘</kbd> <kbd>N</kbd> | New snippet |
 | <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>N</kbd> | New group |
 | <kbd>⌘</kbd> <kbd>K</kbd> | Command palette |
-| <kbd>⌘</kbd> <kbd>1</kbd>–<kbd>4</kbd> | Snippets, Stats, History, Settings |
+| <kbd>⌘</kbd> <kbd>0</kbd> | Stats |
+| <kbd>⌘</kbd> <kbd>Y</kbd> | History |
 | <kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>P</kbd> | Turn expansion on or off |
 | <kbd>⌘</kbd> <kbd>,</kbd> | Settings |
 
@@ -169,13 +151,13 @@ xcodebuild -project Quill.xcodeproj -scheme Quill -configuration Debug \
 xcodebuild test -project Quill.xcodeproj -scheme Quill -destination 'platform=macOS' -derivedDataPath build.noindex
 ```
 
-Runs the unit tests (`QuillTests`: tokens, case matching, store, stats, history filters, the engine self-test) and the UI tests (`QuillUITests`: every page, the editor, bulk actions, grid, search and the welcome tour). The UI tests drive the mouse and keyboard for about two minutes. Both use the in-memory demo library, never your real snippets, and Debug builds use their own bundle ID (`dev.quill.Quill.debug`), so testing doesn't touch the installed app's settings.
+Runs the unit tests (`QuillTests`: tokens, case matching, store, moves and ordering, colours, stats, history filters, the engine self-test) and the UI tests (`QuillUITests`: the sidebar, switches, collapsing, drag to reorder, Icon and Colour, the editor, search, Settings and the welcome tour). The UI tests drive the mouse and keyboard for about two minutes. Both use the in-memory demo library, never your real snippets, and Debug builds use their own bundle ID (`dev.quill.Quill.debug`), so testing doesn't touch the installed app's settings.
 
 Debug-only launch arguments:
 
 - `-QuillSelfTest`: engine and model self-test.
 - `-QuillDemoData`: in-memory sample library, never saved.
-- `-QuillDemo <view>`: opens `library`, `grid`, `stats`, `history`, `editor`, `panel`, `palette`, `welcome` (with `-QuillWelcomeStep 0`–`3`), a settings pane, `bubble`, `fillin`, or plays an effect by name.
+- `-QuillDemo <view>`: opens `library`, `stats`, `history`, `editor`, `appearance`, `newsnippet`, `panel`, `palette`, `welcome` (with `-QuillWelcomeStep 0`–`3`), a settings pane, `bubble`, `fillin`, or plays an effect by name.
 - `-QuillDemo stage:<scene>`: plays a scripted scene for the README recordings: `hero`, `bubble`, `fillin`, `effects`, `panel` or `tour`. It prints the screen area to record.
 - `-QuillUpdateCheck`: one live update check, then quits. `-QuillFakeUpdate` simulates an available update.
 

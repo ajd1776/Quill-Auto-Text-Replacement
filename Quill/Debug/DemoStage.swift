@@ -15,7 +15,7 @@ final class DemoStage {
     private var extraWindow: NSWindow?
 
     /// The stage size in points. Recorded at 2x.
-    static let size = CGSize(width: 960, height: 560)
+    static let size = CGSize(width: 760, height: 300)
 
     private var state: AppState { AppState.shared }
 
@@ -28,7 +28,7 @@ final class DemoStage {
         switch scene {
         case "hero": stage { try await self.hero() }
         case "bubble": stage { try await self.bubble() }
-        case "fillin": stage { try await self.fillIn() }
+        case "fillin": stage(height: 460) { try await self.fillIn() }
         case "effects": stage { try await self.effects() }
         case "panel": panel()
         case "tour": tour(openLibrary: openLibrary)
@@ -39,29 +39,23 @@ final class DemoStage {
     // MARK: Scenes
 
     private func hero() async throws {
-        try await pause(0.8)
-        try await type("Hey Sam, running late but ")
+        try await pause(0.3)
+        try await type("I'm ")
         try await typeTrigger("omw", into: "on my way", effect: .popBadge, bubble: true)
-        try await type("\n\nThe invoice is going to ")
-        try await typeTrigger("eml", into: "name@example.com", effect: .inkUnderline, bubble: true)
-        try await type("\n\n")
+        try await type("\n")
         try await chooseFromBubble(typed: "si", choices: ["sig", "sigw"], pick: 1, effect: .sparkle)
-        try await pause(2.2)
+        try await pause(1.3)
     }
 
     private func bubble() async throws {
-        try await pause(0.8)
-        try await type("Thanks for your help today.\n\n")
+        try await pause(0.3)
         try await chooseFromBubble(typed: "si", choices: ["sig", "sigw"], pick: 1, effect: .glow)
-        try await pause(2.0)
+        try await pause(1.2)
     }
 
     private func fillIn() async throws {
-        try await pause(0.8)
-        try await type("Order update\n\n")
-        try await type("thx")
-        try await pause(0.25)
-        try await type(" ")
+        try await pause(0.3)
+        try await type("thx ", speed: 0.07)
         guard let snippet = snippet("thx") else { return }
         let start = length - 4
         FillInController.demoWithoutFocus = true
@@ -70,38 +64,36 @@ final class DemoStage {
         FillInController.shared.present(snippet: snippet, fields: ["Name", "Order"]) { values in
             inputs = values ?? [:]
         }
-        try await pause(1.0)
+        try await pause(0.6)
         for (field, value) in [("Name", "Sam"), ("Order", "#1042")] {
             for index in value.indices {
                 FillInController.shared.demoModel?.values[field] = String(value[...index])
-                try await pause(0.11)
+                try await pause(0.07)
             }
-            try await pause(0.45)
+            try await pause(0.25)
         }
-        try await pause(0.8)
+        try await pause(0.4)
         FillInController.shared.demoSubmit()
-        try await pause(0.25)
+        try await pause(0.2)
         let text = TokenRenderer.render(snippet.expansion, inputs: inputs, clipboard: "").text
         replace(from: start, with: text)
         play(.confetti, trigger: "thx", inserted: text)
-        try await pause(2.6)
+        try await pause(1.4)
     }
 
     private func effects() async throws {
-        try await pause(0.6)
+        try await pause(0.3)
         let lines: [(String, String, ReplacementAnimation)] = [
             ("omw", "on my way", .cyber),
             ("eml", "name@example.com", .confetti),
-            ("omw", "on my way", .ripple),
-            ("eml", "name@example.com", .particleCloud),
+            ("omw", "on my way", .sparkle),
         ]
         for (index, line) in lines.enumerated() {
-            try await type(line.2.title + ": ")
             try await typeTrigger(line.0, into: line.1, effect: line.2, bubble: false)
-            try await pause(1.6)
+            try await pause(0.7)
             if index < lines.count - 1 { try await type("\n") }
         }
-        try await pause(1.0)
+        try await pause(0.6)
     }
 
     /// The menu bar panel: search, then the group filters.
@@ -125,19 +117,18 @@ final class DemoStage {
             panel.setFrameOrigin(CGPoint(x: area.midX - size.width / 2, y: area.midY - size.height / 2 + 10))
             report(area)
             @MainActor func send(_ info: [String: String]) { NotificationCenter.default.post(name: .quillDemoPanel, object: nil, userInfo: info) }
-            try await pause(2.0)
+            try await pause(0.6)
             for query in ["s", "si", "sig"] {
                 send(["query": query])
-                try await pause(0.35)
+                try await pause(0.25)
             }
-            try await pause(1.4)
+            try await pause(0.9)
             send(["query": ""])
-            try await pause(0.8)
-            for filter in ["Shop", "Code", "Personal", "all"] {
+            try await pause(0.4)
+            for filter in ["Shop", "all"] {
                 send(["filter": filter])
-                try await pause(1.2)
+                try await pause(0.9)
             }
-            try await pause(0.6)
             print("QUILL-DEMO-DONE"); fflush(stdout)
         }
     }
@@ -159,40 +150,43 @@ final class DemoStage {
             window.orderFrontRegardless()
             try await pause(0.4)
             self.report(area)
-            try await pause(2.0)
+            try await pause(0.6)
 
             @MainActor func select(_ trigger: String) {
                 if let id = snippet(trigger)?.id { state.selection = [.snippet(id)] }
             }
             select("eml")
-            try await pause(1.4)
-            select("thx")
-            try await pause(1.6)
-            state.selection = []
-            try await pause(0.5)
-            state.selection = Set(state.store.snippets.prefix(3).map { .snippet($0.id) })
-            try await pause(1.6)
-            for name in ["Personal", "Shop"] {
-                if let group = state.store.groups.first(where: { $0.name == name }) { state.scope = .group(group.id) }
-                try await pause(1.3)
-            }
-            state.scope = .all
             try await pause(1.0)
-            for page in [AppPage.stats, .history] {
-                state.page = page
-                try await pause(1.8)
+            // Switch a snippet off and on again, right in the row.
+            if let id = snippet("omw")?.id {
+                withAnimation { state.store.setEnabled(id, false) }
+                try await pause(0.6)
+                withAnimation { state.store.setEnabled(id, true) }
+                try await pause(0.4)
             }
-            state.selection = []
-            try await pause(1.2)
+            // Collapse and expand a group.
+            if let shop = state.store.groups.first(where: { $0.name == "Shop" }) {
+                withAnimation(.snappy(duration: 0.2)) { state.store.updateGroup(shop.id) { $0.isExpanded = false } }
+                try await pause(0.7)
+                withAnimation(.snappy(duration: 0.2)) { state.store.updateGroup(shop.id) { $0.isExpanded = true } }
+                try await pause(0.5)
+                // Icon and Colour.
+                state.appearanceTarget = .group(shop.id)
+                try await pause(1.6)
+                state.appearanceTarget = nil
+                try await pause(0.5)
+            }
+            state.page = .stats
+            try await pause(1.3)
             print("QUILL-DEMO-DONE"); fflush(stdout)
         }
     }
 
     // MARK: Stage
 
-    private func stage(_ script: @escaping @MainActor () async throws -> Void) {
+    private func stage(height: CGFloat = DemoStage.size.height, _ script: @escaping @MainActor () async throws -> Void) {
         let screen = NSScreen.main?.frame ?? .zero
-        let frame = CGRect(x: 120, y: screen.maxY - 110 - Self.size.height, width: Self.size.width, height: Self.size.height)
+        let frame = CGRect(x: 120, y: screen.maxY - 110 - height, width: Self.size.width, height: height)
         let window = StageWindow(contentRect: frame, styleMask: [.borderless], backing: .buffered, defer: false)
         let textView = NSTextView()
         textView.font = .systemFont(ofSize: 19)
@@ -215,7 +209,7 @@ final class DemoStage {
         self.textView = textView
         report(frame)
         Task {
-            try await pause(1.6)
+            try await pause(0.5)
             try await script()
             print("QUILL-DEMO-DONE"); fflush(stdout)
         }
@@ -286,13 +280,13 @@ final class DemoStage {
             }
             try await pause(0.09)
         }
-        try await pause(bubble ? 0.7 : 0.3)
+        try await pause(bubble ? 0.5 : 0.2)
         append(" ")
         try await pause(0.06)
         SuggestionBubbleController.shared.hide()
         replace(from: start, with: text + " ")
         play(effect, trigger: trigger, inserted: text)
-        try await pause(0.9)
+        try await pause(0.6)
     }
 
     /// Types the start of a shortcut, moves down the bubble with ↓ and takes one with Tab.
@@ -304,12 +298,12 @@ final class DemoStage {
             if index >= 1 {
                 SuggestionBubbleController.shared.showDemo(snippets.map { .init(snippet: $0, typedCount: index + 1) }, highlighted: 0, at: caretRect)
             }
-            try await pause(0.12)
+            try await pause(0.1)
         }
-        try await pause(0.9)
+        try await pause(0.6)
         for row in 1...max(pick, 1) where pick > 0 {
             SuggestionBubbleController.shared.showDemo(snippets.map { .init(snippet: $0, typedCount: typed.count) }, highlighted: row, at: caretRect)
-            try await pause(0.8)
+            try await pause(0.55)
         }
         SuggestionBubbleController.shared.hide()
         let text = snippets[pick].expansion
@@ -349,7 +343,8 @@ private final class StageWindow: NSWindow {
 /// A plain backdrop with one document window on it.
 private struct StageBackdrop: View {
     var body: some View {
-        Color(nsColor: .systemIndigo)
+        // GitHub's dark-mode page colour (#0d1117), so the GIFs blend into the README.
+        Color(red: 13 / 255, green: 17 / 255, blue: 23 / 255)
     }
 }
 
@@ -378,10 +373,9 @@ private struct StageView: View {
             .background(Color(nsColor: .textBackgroundColor))
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(.white.opacity(0.12)))
-            .shadow(color: .black.opacity(0.25), radius: 20, y: 8)
-            .padding(.horizontal, 110)
-            .padding(.top, 44)
-            .padding(.bottom, 40)
+            .padding(.horizontal, 56)
+            .padding(.top, 72)
+            .padding(.bottom, 24)
         }
     }
 }
