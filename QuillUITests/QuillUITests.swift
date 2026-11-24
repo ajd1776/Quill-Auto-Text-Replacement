@@ -31,14 +31,18 @@ final class QuillUITests: XCTestCase {
         sidebar.staticTexts[trigger].firstMatch
     }
 
-    func testStatsAndHistoryInSidebar() {
+    func testTabBar() {
         launch()
-        let history = row("History")
+        let history = app.buttons["tab-history"].firstMatch
         XCTAssertTrue(history.waitForExistence(timeout: 5))
         history.click()
         XCTAssertTrue(app.searchFields["Search History"].waitForExistence(timeout: 5), "History should show")
-        row("Stats").click()
+        app.buttons["tab-stats"].firstMatch.click()
         XCTAssertTrue(app.radioButtons["30 Days"].waitForExistence(timeout: 5), "Stats should show")
+        app.buttons["tab-snippets"].firstMatch.click()
+        XCTAssertTrue(row("eml").waitForExistence(timeout: 5), "Quills should show the sidebar")
+        app.buttons["tab-new"].firstMatch.click()
+        XCTAssertTrue(app.textFields["appearance-name"].firstMatch.waitForExistence(timeout: 5), "New opens Icon and Colour")
     }
 
     func testKeyboardShortcuts() {
