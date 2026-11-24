@@ -1,8 +1,9 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The main window: a floating tab bar at the bottom switches between Quills (the
-/// sidebar of groups and the editor), Stats, History, Firing Range and Settings, with New among them.
+/// The main window: the quills sidebar on the left, always shown, and on the right the
+/// page the floating tab bar picks: the selected quill's editor, Stats, History, the
+/// Firing Range or Settings, with New among them.
 struct LibraryView: View {
     @Environment(AppState.self) private var state
     @Environment(\.undoManager) private var undoManager
@@ -28,32 +29,28 @@ struct LibraryView: View {
     var body: some View {
         @Bindable var state = state
 
-        VStack(spacing: 0) {
-            Group {
-            switch state.page {
-            case .snippets:
-                NavigationSplitView {
-                    sidebar
-                        .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 460)
-                } detail: {
-                    detail
+        // The quills sidebar is always there; the tab bar picks what the right-hand side shows.
+        NavigationSplitView {
+            sidebar
+                .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 460)
+        } detail: {
+            VStack(spacing: 0) {
+                Group {
+                    switch state.page {
+                    case .snippets: detail
+                    case .stats: OverviewView()
+                    case .history: HistoryView()
+                    case .firingRange: FiringRangeView()
+                    case .settings: SettingsView()
+                    }
                 }
-                .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
-            case .stats:
-                NavigationStack { OverviewView() }
-            case .history:
-                NavigationStack { HistoryView() }
-            case .firingRange:
-                NavigationStack { FiringRangeView() }
-            case .settings:
-                NavigationStack { SettingsView() }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                MainTabBar()
             }
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            MainTabBar()
         }
+        .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
         // Without a minimum, macOS can restore the window at a uselessly small size.
-        .frame(minWidth: 900, minHeight: 640)
+        .frame(minWidth: 1100, minHeight: 640)
         .sheet(isPresented: Binding(
             get: { state.updates.isShowingDetails && state.updates.availableUpdate != nil },
             set: { state.updates.isShowingDetails = $0 }

@@ -151,7 +151,7 @@ struct FiringRangeView: View {
                     }
                 }
             }
-            .listStyle(.sidebar)
+            .listStyle(.inset)
             .scrollContentBackground(.hidden)
         }
         .background(.background.secondary)

@@ -201,7 +201,10 @@ final class AppState {
     /// Which area the window shows, worked out from the sidebar selection. Setting it selects that area,
     /// so menus, ⌘K and the menu bar panel can switch areas; Settings opens its own window.
     /// The page the main window's tab bar shows.
-    var page: AppPage = .snippets
+    var page: AppPage = .snippets {
+        // Another page leaves the sidebar unselected, so clicking any quill brings back its editor.
+        didSet { if page != .snippets, !selection.isEmpty { selection = [] } }
+    }
 
     /// The snippets a scope covers, before search and sorting.
     func snippets(in scope: SnippetScope) -> [Snippet] {
