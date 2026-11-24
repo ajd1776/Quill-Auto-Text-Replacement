@@ -56,6 +56,8 @@ struct FiringRangeView: View {
             }
         }
         .onAppear { isTyping = true }
+        .onChange(of: isTyping, initial: true) { _, focused in state.isPracticeFocused = focused }
+        .onDisappear { state.isPracticeFocused = false }
     }
 
     // MARK: Practice

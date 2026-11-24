@@ -36,6 +36,9 @@ final class ExpansionEngine {
     var isPaused = false { didSet { reset() } }
     /// Set while Quill's own search panel has focus.
     var isSuspended = false { didSet { reset() } }
+    /// Quill's own windows are skipped, except where this says typing is practice
+    /// (the Firing Range's practice text).
+    var listensInQuill: () -> Bool = { false }
     var excludedBundleIDs = Set<String>()
     var typewriterSpeed: Double = 60
     /// When false, animations play even with Reduce Motion on (the person's explicit choice).
@@ -175,7 +178,8 @@ final class ExpansionEngine {
         #if DEBUG
         if isSelfTesting { return !isPaused && !isAwaitingInput }
         #endif
-        if isPaused || isSuspended || isAwaitingInput || NSApp.isActive { return false }
+        if isPaused || isSuspended || isAwaitingInput { return false }
+        if NSApp.isActive, !listensInQuill() { return false }
         if let frontmostBundleID, excludedBundleIDs.contains(frontmostBundleID) { return false }
         return true
     }

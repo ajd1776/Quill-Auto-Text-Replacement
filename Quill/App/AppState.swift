@@ -277,9 +277,12 @@ final class AppState {
     /// The effect every quill uses in the Firing Range, or nil for each quill's own.
     var rangeEffect: ReplacementAnimation?
 
-    /// True while you're typing on the Firing Range page.
+    /// True while the Firing Range's practice text has the cursor.
+    @ObservationIgnored var isPracticeFocused = false
+
+    /// True while you're typing in the Firing Range's practice text.
     var isFiringRangeKey: Bool {
-        guard page == .firingRange, NSApp.isActive, let window = NSApp.keyWindow else { return false }
+        guard page == .firingRange, isPracticeFocused, NSApp.isActive, let window = NSApp.keyWindow else { return false }
         return window.title == AppPage.firingRange.title
     }
 
@@ -399,6 +402,7 @@ final class AppState {
             return snippet.animation ?? self.defaultAnimation
         }
         engine.onExpanded = { [unowned self] expansion in self.didExpand(expansion) }
+        engine.listensInQuill = { [unowned self] in self.isFiringRangeKey }
         engine.onUndone = { [unowned self] id in
             if self.isFiringRangeKey {
                 if let index = self.rangeHits.firstIndex(where: { $0.snippetID == id }) { self.rangeHits.remove(at: index) }
