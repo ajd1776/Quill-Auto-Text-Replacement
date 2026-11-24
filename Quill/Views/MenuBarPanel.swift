@@ -34,9 +34,7 @@ struct MenuBarPanel: View {
                 }
             }
             .filter {
-                text.isEmpty
-                    || $0.trigger.localizedCaseInsensitiveContains(text)
-                    || $0.expansion.localizedCaseInsensitiveContains(text)
+                text.isEmpty || $0.matches(text)
             }
             .sorted(by: sort.areInIncreasingOrder)
     }

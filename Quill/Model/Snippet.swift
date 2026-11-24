@@ -180,10 +180,19 @@ struct Snippet: Identifiable, Codable, Hashable {
     var matchesAnyCase = false
     /// The icon's colour: a system colour name or #RRGGBB. nil uses the group's colour.
     var color: String?
+    /// Your own notes about this quill: what it's for, where you use it. Never typed.
+    var notes = ""
 
     enum CodingKeys: String, CodingKey {
         case id, trigger, expansion, mode, isEnabled, created, animation, useCount, lastUsed, groupID, symbol
-        case appBundleIDs, matchesAnyCase, color
+        case appBundleIDs, matchesAnyCase, color, notes
+    }
+
+    /// Whether the shortcut, text or notes contain this search text.
+    func matches(_ query: String) -> Bool {
+        trigger.localizedCaseInsensitiveContains(query)
+            || expansion.localizedCaseInsensitiveContains(query)
+            || notes.localizedCaseInsensitiveContains(query)
     }
 
     /// Whether this snippet may expand in the app with this bundle identifier.
@@ -227,6 +236,7 @@ extension Snippet {
         appBundleIDs = try container.decodeIfPresent([String].self, forKey: .appBundleIDs) ?? []
         matchesAnyCase = try container.decodeIfPresent(Bool.self, forKey: .matchesAnyCase) ?? false
         color = try container.decodeIfPresent(String.self, forKey: .color)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes) ?? ""
     }
 }
 

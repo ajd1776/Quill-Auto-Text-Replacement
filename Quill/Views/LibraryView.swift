@@ -20,8 +20,7 @@ struct LibraryView: View {
     private func visible(_ snippets: [Snippet]) -> [Snippet] {
         let query = searchText.trimmingCharacters(in: .whitespaces)
         let matching = query.isEmpty ? snippets : snippets.filter {
-            $0.trigger.localizedCaseInsensitiveContains(query)
-                || $0.expansion.localizedCaseInsensitiveContains(query)
+            $0.matches(query)
         }
         return state.sortOrder.sorted(matching)
     }

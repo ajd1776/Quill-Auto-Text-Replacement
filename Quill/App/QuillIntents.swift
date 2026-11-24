@@ -31,7 +31,7 @@ struct SnippetQuery: EntityStringQuery {
     @MainActor
     func entities(matching string: String) async throws -> [SnippetEntity] {
         AppState.shared.store.snippets
-            .filter { $0.hasValidTrigger && ($0.trigger.localizedCaseInsensitiveContains(string) || $0.expansion.localizedCaseInsensitiveContains(string)) }
+            .filter { $0.hasValidTrigger && $0.matches(string) }
             .map(SnippetEntity.init)
     }
 

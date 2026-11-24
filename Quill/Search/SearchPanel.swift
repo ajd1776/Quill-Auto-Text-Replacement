@@ -26,8 +26,7 @@ final class SearchModel {
         let query = query.trimmingCharacters(in: .whitespaces)
         let candidates = store.snippets.filter { !$0.expansion.isEmpty }
         let matching = query.isEmpty ? candidates : candidates.filter {
-            $0.trigger.localizedCaseInsensitiveContains(query)
-                || $0.expansion.localizedCaseInsensitiveContains(query)
+            $0.matches(query)
         }
         return Array(matching.sorted(by: SnippetSortOrder.mostUsed.areInIncreasingOrder).prefix(50))
     }

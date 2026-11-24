@@ -13,7 +13,7 @@ struct FiringRangeView: View {
         let active = state.store.activeSnippets.sorted { $0.trigger.localizedStandardCompare($1.trigger) == .orderedAscending }
         let query = search.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return active }
-        return active.filter { $0.trigger.localizedCaseInsensitiveContains(query) || $0.expansion.localizedCaseInsensitiveContains(query) }
+        return active.filter { $0.matches(query) }
     }
 
     var body: some View {

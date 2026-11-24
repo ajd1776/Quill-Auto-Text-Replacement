@@ -26,6 +26,8 @@ struct SnippetDetailView: View {
                 tokenPreview
             }
             Divider()
+            notesField
+            Divider()
             footer
         }
         .background(Surface.editor)
@@ -260,6 +262,26 @@ struct SnippetDetailView: View {
         .padding(.vertical, 11)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.bar)
+    }
+
+    // MARK: Notes
+
+    /// Your own notes about the quill. Never typed; searches match them.
+    private var notesField: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 10) {
+            Image(systemName: "note.text")
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            TextField("Notes", text: $snippet.notes, prompt: Text("Add notes: what it's for, where you use it"), axis: .vertical)
+                .textFieldStyle(.plain)
+                .lineLimit(1...5)
+                .font(.callout)
+                .accessibilityLabel("Notes")
+                .accessibilityIdentifier("quill-notes")
+        }
+        .padding(.horizontal, inset)
+        .padding(.vertical, 10)
+        .help("Notes are just for you. They're never typed, and searches match them.")
     }
 
     // MARK: Apps
