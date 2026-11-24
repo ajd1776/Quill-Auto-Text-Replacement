@@ -106,7 +106,7 @@ final class QuillUITests: XCTestCase {
 
     /// A group's header in the sidebar. macOS reads it as one element, so its arrow and switch are clicked by position.
     private func header(_ group: String) -> XCUIElement {
-        sidebar.descendants(matching: .any)["group-header-\(group)"].firstMatch
+        sidebar.descendants(matching: .any).matching(identifier: "group-header-\(group)").firstMatch
     }
 
     func testGroupCollapsesAndExpands() {
