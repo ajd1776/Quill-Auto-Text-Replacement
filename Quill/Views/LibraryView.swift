@@ -46,6 +46,7 @@ struct LibraryView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 MainTabBar()
+                    .modifier(WindowCentred())
             }
         }
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
@@ -436,7 +437,7 @@ private struct MainTabBar: View {
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .padding(.top, 8)
         .padding(.bottom, 12)
-        .frame(maxWidth: .infinity)
+        .fixedSize()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Pages")
     }
@@ -479,6 +480,29 @@ private struct MainTabBar: View {
         .help("New Quill (⌘N)")
         .accessibilityLabel("New Quill")
         .accessibilityIdentifier("tab-new")
+    }
+}
+
+/// Centres a view on the whole window rather than its column, sliding it back only as far
+/// as needed to stay clear of the sidebar when the window is narrow.
+private struct WindowCentred: ViewModifier {
+    @State private var column = CGRect.zero
+    @State private var width: CGFloat = 0
+
+    func body(content: Content) -> some View {
+        content
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width = $0 }
+            .offset(x: shift)
+            .frame(maxWidth: .infinity)
+            .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { column = $0 }
+    }
+
+    /// The column runs to the window's right edge, so the window's centre is half its maxX.
+    private var shift: CGFloat {
+        guard column.width > 0, width > 0 else { return 0 }
+        let toWindowCentre = column.maxX / 2 - column.midX
+        let clearOfSidebar = column.minX + 12 + width / 2 - column.midX
+        return min(0, max(toWindowCentre, clearOfSidebar))
     }
 }
 
