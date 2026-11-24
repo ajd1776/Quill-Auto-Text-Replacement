@@ -124,10 +124,19 @@ final class AppState {
         }
     }
 
+    /// Whether the space typed to trigger a snippet stays after the text.
+    var addsSpaceAfterSnippet = true {
+        didSet {
+            defaults.set(addsSpaceAfterSnippet, forKey: Keys.addsSpaceAfterSnippet)
+            engine.keepsTriggerSpace = addsSpaceAfterSnippet
+        }
+    }
+
     var showsPartialSuggestions = true {
         didSet {
             defaults.set(showsPartialSuggestions, forKey: Keys.showsPartialSuggestions)
             engine.partialSuggestionsEnabled = showsPartialSuggestions
+        engine.keepsTriggerSpace = addsSpaceAfterSnippet
         }
     }
 
@@ -266,6 +275,7 @@ final class AppState {
         static let animatesWithReduceMotion = "animatesWithReduceMotion"
         static let showsSuggestions = "showsSuggestions"
         static let showsPartialSuggestions = "showsPartialSuggestions"
+        static let addsSpaceAfterSnippet = "addsSpaceAfterSnippet"
         static let bubblePosition = "bubblePosition"
         static let soundName = "soundName"
         static let soundVolume = "soundVolume"
@@ -312,6 +322,7 @@ final class AppState {
         animatesWithReduceMotion = defaults.bool(forKey: Keys.animatesWithReduceMotion)
         showsSuggestions = defaults.object(forKey: Keys.showsSuggestions) as? Bool ?? true
         showsPartialSuggestions = defaults.object(forKey: Keys.showsPartialSuggestions) as? Bool ?? true
+        addsSpaceAfterSnippet = defaults.object(forKey: Keys.addsSpaceAfterSnippet) as? Bool ?? true
         bubblePosition = defaults.string(forKey: Keys.bubblePosition).flatMap(BubblePosition.init) ?? .below
         soundName = defaults.string(forKey: Keys.soundName)
         if defaults.object(forKey: Keys.soundVolume) != nil {
@@ -337,6 +348,7 @@ final class AppState {
         engine.honoursReduceMotion = !animatesWithReduceMotion
         engine.suggestionsEnabled = showsSuggestions
         engine.partialSuggestionsEnabled = showsPartialSuggestions
+        engine.keepsTriggerSpace = addsSpaceAfterSnippet
         engine.styleResolver = { [unowned self] snippet in snippet.animation ?? self.defaultAnimation }
         engine.onExpanded = { [unowned self] expansion in self.didExpand(expansion) }
         engine.onUndone = { [unowned self] id in

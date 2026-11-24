@@ -61,6 +61,7 @@ enum EngineSelfTest {
             var bubbleVisible = true
             var frontmost: String? = nil
             var cancelsFillIn = false
+            var keepsSpace = true
         }
         let tuples: [(name: String, keys: String, expected: String, style: ReplacementAnimation, paused: Bool)] = [
             ("expands after space", "Email eml ", "Email user@example.com ", .instant, false),
@@ -108,6 +109,11 @@ enum EngineSelfTest {
             Case(name: "fill-in via Tab from a partial match", keys: "hi⇥", expected: "Hi AJ, order 42!"),
             Case(name: "emoji shortcode expands on the closing colon", keys: "nice :fire:", expected: "nice 🔥"),
             Case(name: "typo fix matches any capitals", keys: "Teh cat", expected: "The cat"),
+            Case(name: "no space after: the trigger space is dropped", keys: "Email eml ", expected: "Email user@example.com", keepsSpace: false),
+            Case(name: "no space after: typing carries on straight after", keys: "eml x", expected: "user@example.comx", keepsSpace: false),
+            Case(name: "no space after: punctuation still goes through", keys: "eml.", expected: "user@example.com.", keepsSpace: false),
+            Case(name: "no space after: Return still goes through", keys: "eml⏎", expected: "user@example.com\n", keepsSpace: false),
+            Case(name: "no space after: Delete still undoes", keys: "eml ⌫", expected: "eml", keepsSpace: false),
         ]
 
         let engine = ExpansionEngine.shared
@@ -142,6 +148,7 @@ enum EngineSelfTest {
             KeyboardEmitter.recorder = { document.apply($0) }
             engine.isPaused = testCase.paused
             engine.isBubbleVisible = testCase.bubbleVisible
+            engine.keepsTriggerSpace = testCase.keepsSpace
             engine.setFrontmostForTesting(testCase.frontmost)
             let cancels = testCase.cancelsFillIn
             engine.onNeedsInput = { _, fields, completion in
@@ -168,6 +175,7 @@ enum EngineSelfTest {
 
         KeyboardEmitter.recorder = nil
         engine.isSelfTesting = false
+        engine.keepsTriggerSpace = AppState.shared.addsSpaceAfterSnippet
         engine.isPaused = false
         engine.isBubbleVisible = false
         engine.onNeedsInput = savedNeedsInput

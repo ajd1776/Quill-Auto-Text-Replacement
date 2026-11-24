@@ -41,6 +41,9 @@ final class ExpansionEngine {
     /// When false, animations play even with Reduce Motion on (the person's explicit choice).
     var honoursReduceMotion = true
     var suggestionsEnabled = true { didSet { clearSuggestions() } }
+    /// When false, the space typed to trigger a snippet is dropped, so the text ends right after
+    /// the snippet. Return, Tab and punctuation always go through.
+    var keepsTriggerSpace = true
     /// Set by the bubble. Tab, Esc and ↑↓ only act on suggestions while the bubble is on screen,
     /// so a bubble that couldn't be shown never swallows those keys.
     var isBubbleVisible = false
@@ -297,7 +300,9 @@ final class ExpansionEngine {
             buffer = ""
             clearSuggestions()
             // Return and Tab can send a message or move focus, so they can't be undone.
-            expand(snippet, deleting: typedShortcut.count, replay: event,
+            // The trigger space is dropped when that's turned off; Return and Tab never are.
+            let dropsSpace = !keepsTriggerSpace && typed == " "
+            expand(snippet, deleting: typedShortcut.count, replay: dropsSpace ? nil : event,
                    typed: typedShortcut, allowsUndo: !isLineOrTab)
             return nil
         }

@@ -120,6 +120,19 @@ struct GeneralSettingsPane: View {
             }
 
             Section {
+                Toggle("Add a space after a snippet", isOn: Binding(
+                    get: { state.addsSpaceAfterSnippet },
+                    set: { state.addsSpaceAfterSnippet = $0 }
+                ))
+            } header: {
+                Text("Expansion")
+            } footer: {
+                FooterText(state.addsSpaceAfterSnippet
+                    ? "The space you type to expand a shortcut stays after the text."
+                    : "The space you type to expand a shortcut is removed, so the text ends right after the snippet. Return, Tab and punctuation still go through.")
+            }
+
+            Section {
                 if state.excludedBundleIDs.isEmpty {
                     Text("Quill works in every app.")
                         .foregroundStyle(.secondary)
