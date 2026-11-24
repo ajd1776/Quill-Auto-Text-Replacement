@@ -133,7 +133,7 @@ final class DemoStage {
         }
     }
 
-    /// The library window: editor, grid, groups, then each page.
+    /// The library window: editor, switches, groups, Icon and Colour, then Stats and the Firing Range.
     private func tour(openLibrary: @escaping () -> Void) {
         state.selection = []
         state.scope = .all
@@ -177,7 +177,9 @@ final class DemoStage {
                 try await pause(0.5)
             }
             state.page = .stats
-            try await pause(1.3)
+            try await pause(1.2)
+            state.page = .firingRange
+            try await pause(1.2)
             print("QUILL-DEMO-DONE"); fflush(stdout)
         }
     }

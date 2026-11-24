@@ -53,11 +53,11 @@ The most useful first:
 | --- | --- |
 | <img src="docs/media/bubble.gif" alt="Typing si shows sig and sigw in a bubble above the text; the arrow key picks sigw and Tab inserts the signature"> | <img src="docs/media/fillin.gif" alt="Typing thx opens a form for Name and Order, then inserts the finished message with confetti"> |
 
-<p align="center"><img src="docs/media/tour.gif" width="820" alt="The Quill window: selecting a quill, switching one off and on in its row, collapsing the Shop group, the Icon and Colour sheet, then Stats"></p>
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="The Quill window: selecting a quill, switching one off and on in its row, collapsing the Shop group, the Icon and Colour sheet, then Stats and the Firing Range from the tab bar"></p>
 
 | Menu bar panel | Effects |
 | --- | --- |
-| <img src="docs/media/panel.gif" width="320" alt="The menu bar panel: searching for sig, then filtering by the Shop group"> | <img src="docs/media/effects.gif" alt="Three expansions with the Cyber, Confetti and Sparkle effects"> |
+| <img src="docs/media/panel.gif" width="320" alt="The menu bar panel: searching for sig, then filtering by the Shop group, with the tab bar and Quit along the bottom"> | <img src="docs/media/effects.gif" alt="Three expansions with the Cyber, Confetti and Sparkle effects"> |
 
 ## Screenshots
 
