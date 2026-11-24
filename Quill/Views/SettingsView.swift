@@ -51,7 +51,7 @@ struct SettingsView: View {
             }
             .frame(maxWidth: 620)
             .frame(maxWidth: .infinity)
-            .padding(.top, 64)
+            .padding(.top, 92)
             .padding(.bottom, 12)
         }
         .overlay(alignment: .top) {
@@ -62,43 +62,40 @@ struct SettingsView: View {
     }
 }
 
-/// A floating capsule of text tabs, like the tab bar at the top of iPad apps.
-/// The selected tab sits in a tinted pill that slides between tabs.
+/// A floating tab bar like the one on iPhone: a symbol over a label for each tab,
+/// the selected one in the accent colour, on a rounded panel above the page.
 private struct SettingsTabBar: View {
     @Binding var selection: SettingsPane
     let current: SettingsPane
-    @Namespace private var pill
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        HStack(spacing: 2) {
+        HStack(spacing: 4) {
             ForEach(SettingsPane.tabs) { tab in
                 let isSelected = tab == current
                 Button {
-                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { selection = tab }
+                    selection = tab
                 } label: {
-                    Text(tab.title)
-                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
-                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
-                        .padding(.horizontal, 14)
-                        .frame(height: 28)
-                        .background {
-                            if isSelected {
-                                Capsule()
-                                    .fill(Color.accentColor.opacity(0.16))
-                                    .matchedGeometryEffect(id: "pill", in: pill)
-                            }
-                        }
-                        .contentShape(Capsule())
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.symbol)
+                            .font(.system(size: 20, weight: .medium))
+                            .frame(height: 24)
+                        Text(tab.title)
+                            .font(.system(size: 11, weight: .medium))
+                    }
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                    .frame(width: 92, height: 52)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(tab.title)
                 .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                 .accessibilityIdentifier("settings-tab-\(tab.rawValue)")
             }
         }
-        .padding(4)
-        .background(.bar, in: Capsule())
-        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Settings tabs")
     }
