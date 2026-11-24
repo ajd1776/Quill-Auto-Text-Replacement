@@ -76,3 +76,26 @@ private struct WindowTracker: ViewModifier {
             }
     }
 }
+
+/// Quill's surfaces. Light mode keeps the system colours; dark mode goes a step darker
+/// than macOS's defaults, close to black, with the layers still apart.
+enum Surface {
+    /// Page backgrounds: Stats, History, Settings, the Firing Range, the empty editor.
+    static let page = dynamic(light: .windowBackgroundColor, dark: 0x111113)
+    /// Where text is typed: the editor and the practice area.
+    static let editor = dynamic(light: .textBackgroundColor, dark: 0x0C0C0E)
+    /// The quills sidebar (dark mode only; light keeps the system sidebar).
+    static let sidebar = dynamic(light: .windowBackgroundColor, dark: 0x161619)
+    /// Cards and tiles on a page.
+    static let card = dynamic(light: NSColor.labelColor.withAlphaComponent(0.05), dark: 0x1C1C20)
+    /// The floating tab bars.
+    static let bar = dynamic(light: .windowBackgroundColor, dark: 0x1A1A1E)
+
+    private static func dynamic(light: NSColor, dark hex: Int) -> Color {
+        let darkColor = NSColor(srgbRed: CGFloat((hex >> 16) & 0xFF) / 255, green: CGFloat((hex >> 8) & 0xFF) / 255,
+                                blue: CGFloat(hex & 0xFF) / 255, alpha: 1)
+        return Color(nsColor: NSColor(name: nil) { appearance in
+            appearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? darkColor : light
+        })
+    }
+}

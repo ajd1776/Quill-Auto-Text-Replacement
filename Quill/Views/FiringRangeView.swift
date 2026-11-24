@@ -90,7 +90,7 @@ struct FiringRangeView: View {
                 .scrollContentBackground(.hidden)
                 .padding(10)
                 .focused($isTyping)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 10))
+                .background(Surface.editor, in: RoundedRectangle(cornerRadius: 10))
                 .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.separator))
                 .overlay(alignment: .topLeading) {
                     if text.isEmpty {
@@ -120,7 +120,7 @@ struct FiringRangeView: View {
                     .textFieldStyle(.plain)
             }
             .padding(8)
-            .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 8))
+            .background(Surface.card, in: RoundedRectangle(cornerRadius: 8))
             .padding(12)
 
             List {
@@ -156,7 +156,7 @@ struct FiringRangeView: View {
             .listStyle(.inset)
             .scrollContentBackground(.hidden)
         }
-        .background(.background.secondary)
+        .background(Surface.sidebar)
     }
 
     /// Puts the cursor back in the practice text, then types the quill there.
@@ -184,7 +184,7 @@ private struct ScoreTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+        .background(Surface.card, in: RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .combine)
     }
 }

@@ -62,7 +62,7 @@ struct OverviewView: View {
             .frame(maxWidth: 1040)
             .frame(maxWidth: .infinity)
         }
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(Surface.page)
         .navigationTitle("Stats")
     }
 
@@ -323,7 +323,7 @@ private struct StatTile: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Surface.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .accessibilityElement(children: .combine)
     }
 }
@@ -343,7 +343,7 @@ private struct Card<Content: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .background(Surface.card, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 }
 

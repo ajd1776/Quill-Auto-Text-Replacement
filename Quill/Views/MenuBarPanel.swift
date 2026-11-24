@@ -304,7 +304,7 @@ struct MenuBarPanel: View {
         }
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
-        .background(.bar, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .background(Surface.bar, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
     }
 

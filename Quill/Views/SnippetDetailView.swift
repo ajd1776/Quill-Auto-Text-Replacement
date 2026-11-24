@@ -28,7 +28,7 @@ struct SnippetDetailView: View {
             Divider()
             footer
         }
-        .background(Color(nsColor: .textBackgroundColor))
+        .background(Surface.editor)
         .navigationTitle(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {

@@ -88,7 +88,7 @@ private struct SettingsTabBar: View {
             }
         }
         .padding(4)
-        .background(.bar, in: Capsule())
+        .background(Surface.bar, in: Capsule())
         .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Settings tabs")
@@ -99,6 +99,7 @@ private struct SettingsTabBar: View {
 private extension View {
     func settingsPaneStyle() -> some View {
         formStyle(.grouped)
+            .scrollContentBackground(.hidden)
             .scrollDisabled(true)
             .fixedSize(horizontal: false, vertical: true)
     }

@@ -59,6 +59,7 @@ struct HistoryView: View {
                             }
                         }
                         .listStyle(.inset)
+                        .scrollContentBackground(.hidden)
                         .onDeleteCommand { state.history.remove(selection) }
                     }
                 }

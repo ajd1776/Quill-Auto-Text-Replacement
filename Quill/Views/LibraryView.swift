@@ -48,6 +48,8 @@ struct LibraryView: View {
                 MainTabBar()
                     .modifier(WindowCentred())
             }
+            .background(Surface.page)
+            .toolbarBackground(Surface.page, for: .windowToolbar)
         }
         .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
         // Without a minimum, macOS can restore the window at a uselessly small size.
@@ -208,6 +210,7 @@ struct LibraryView: View {
             }
         }
         .listStyle(.sidebar)
+        .modifier(DarkSidebar())
         // Double-clicking a snippet opens Icon and Colour. The menu stays empty so each row keeps its own.
         .contextMenu(forSelectionType: SidebarItem.self) { _ in
         } primaryAction: { items in
@@ -433,7 +436,7 @@ private struct MainTabBar: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .background(.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(Surface.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
         .padding(.top, 8)
         .padding(.bottom, 12)
@@ -480,6 +483,21 @@ private struct MainTabBar: View {
         .help("New Quill (⌘N)")
         .accessibilityLabel("New Quill")
         .accessibilityIdentifier("tab-new")
+    }
+}
+
+/// In dark mode the sidebar gets Quill's darker, solid surface; light mode keeps the system sidebar.
+private struct DarkSidebar: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+
+    func body(content: Content) -> some View {
+        if colorScheme == .dark {
+            content
+                .scrollContentBackground(.hidden)
+                .background(Surface.sidebar)
+        } else {
+            content
+        }
     }
 }
 
