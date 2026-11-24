@@ -99,9 +99,10 @@ struct MenuBarPanel: View {
 
             footer
                 .padding(.horizontal, 10)
-                .padding(.vertical, 8)
+                .padding(.top, 10)
+                .padding(.bottom, 10)
         }
-        .frame(width: 360)
+        .frame(width: 384)
         .onAppear {
             state.setSearchPanelOpen(true)
             isSearchFocused = true
@@ -266,32 +267,50 @@ struct MenuBarPanel: View {
 
     // MARK: Footer
 
+    /// The main window's tab bar in miniature, plus Quit: each page opens the window there.
     private var footer: some View {
-        HStack(spacing: 2) {
-            FooterButton(title: "New Quill", symbol: "square.and.pencil") {
-                openLibrary()
-                state.page = .snippets
+        HStack(spacing: 0) {
+            PanelTab(title: "Quills", symbol: "rectangle.stack.fill") { show(.snippets) }
+            PanelTab(title: "Stats", symbol: "chart.bar.fill") { show(.stats) }
+            PanelTab(title: "History", symbol: "clock.fill") { show(.history) }
+            Button {
+                show(.snippets)
                 state.newSnippet()
+            } label: {
+                VStack(spacing: 3) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 24, height: 24)
+                        .background(Color.accentColor, in: Circle())
+                    Text("New")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                .frame(width: 48, height: 44)
+                .contentShape(Rectangle())
             }
-            FooterButton(title: "Library", symbol: "books.vertical") {
-                state.page = .snippets
-                openLibrary()
-            }
-            FooterButton(title: "Stats", symbol: "chart.bar") {
-                state.page = .stats
-                openLibrary()
-            }
-            FooterButton(title: "Firing Range", symbol: "scope") {
-                closePanel()
-                state.showFiringRange()
-            }
-            FooterButton(title: "Settings", symbol: "gearshape") {
-                closePanel()
-                state.showSettings()
-            }
-            Spacer()
-            FooterButton(title: "Quit", symbol: "power") { NSApp.terminate(nil) }
+            .buttonStyle(.plain)
+            .focusEffectDisabled()
+            .help("New Quill")
+            .accessibilityLabel("New Quill")
+            PanelTab(title: "Range", symbol: "scope", help: "Firing Range") { show(.firingRange) }
+            PanelTab(title: "Settings", symbol: "gearshape.fill") { show(.settings) }
+            Rectangle()
+                .fill(.separator)
+                .frame(width: 1, height: 28)
+                .padding(.horizontal, 4)
+            PanelTab(title: "Quit", symbol: "power", help: "Quit Quill") { NSApp.terminate(nil) }
         }
+        .padding(.horizontal, 6)
+        .padding(.vertical, 4)
+        .background(.bar, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+    }
+
+    private func show(_ page: AppPage) {
+        openLibrary()
+        state.page = page
     }
 
     /// Closes the panel, hands focus back to the app you were typing in, then types the snippet.
@@ -379,24 +398,32 @@ private struct Chip: View {
     }
 }
 
-private struct FooterButton: View {
+/// One page in the panel's tab bar: a symbol over a short label, like the main window's.
+private struct PanelTab: View {
     let title: String
     let symbol: String
+    var help: String?
     let action: () -> Void
     @State private var isHovering = false
 
     var body: some View {
         Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 14))
-                .frame(width: 32, height: 26)
-                .background(isHovering ? Color.primary.opacity(0.08) : .clear, in: RoundedRectangle(cornerRadius: 6))
-                .contentShape(Rectangle())
+            VStack(spacing: 3) {
+                Image(systemName: symbol)
+                    .font(.system(size: 16, weight: .medium))
+                    .frame(height: 24)
+                Text(title)
+                    .font(.system(size: 10, weight: .medium))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(isHovering ? Color.accentColor : Color.secondary)
+            .frame(width: 48, height: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .foregroundStyle(.secondary)
-        .help(title)
-        .accessibilityLabel(title)
+        .focusEffectDisabled()
+        .help(help ?? title)
+        .accessibilityLabel(help ?? title)
         .onHover { isHovering = $0 }
     }
 }
