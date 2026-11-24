@@ -29,8 +29,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     }
 }
 
-/// Quill Settings: one page in the main window, with an iPad-style floating tab bar
-/// along the top. Five tabs at most; About sits at the bottom of General.
+/// Quill Settings: one page in the main window, with an floating tab bar
+/// along the bottom. Five tabs at most; About sits at the bottom of General.
 struct SettingsView: View {
     @AppStorage("settingsPane") private var stored: SettingsPane = .general
 
@@ -51,19 +51,19 @@ struct SettingsView: View {
             }
             .frame(maxWidth: 620)
             .frame(maxWidth: .infinity)
-            .padding(.top, 92)
-            .padding(.bottom, 12)
+            .padding(.top, 12)
+            .padding(.bottom, 96)
         }
-        .overlay(alignment: .top) {
+        .overlay(alignment: .bottom) {
             SettingsTabBar(selection: $stored, current: pane)
-                .padding(.top, 12)
+                .padding(.bottom, 16)
         }
         .navigationTitle("Settings")
     }
 }
 
 /// A floating tab bar like the one on iPhone: a symbol over a label for each tab,
-/// the selected one in the accent colour, on a rounded panel above the page.
+/// the selected one in the accent colour, on a rounded panel floating at the bottom of the page.
 private struct SettingsTabBar: View {
     @Binding var selection: SettingsPane
     let current: SettingsPane
