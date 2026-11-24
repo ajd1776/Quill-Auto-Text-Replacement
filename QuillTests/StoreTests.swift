@@ -199,6 +199,8 @@ final class ScopeTests: XCTestCase {
         state.open(link: URL(string: "quill://settings/effects")!)
         XCTAssertEqual(state.page, .settings)
         XCTAssertEqual(UserDefaults.standard.string(forKey: "settingsPane"), "effects")
+        state.open(link: URL(string: "quill://firing-range")!)
+        XCTAssertEqual(state.page, .firingRange, "The Firing Range is a page too")
         state.open(link: URL(string: "quill://stats")!)
         XCTAssertEqual(state.page, .stats)
         state.page = .snippets

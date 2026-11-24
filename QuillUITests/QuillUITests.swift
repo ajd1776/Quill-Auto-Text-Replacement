@@ -229,7 +229,7 @@ final class QuillUITests: XCTestCase {
     func testFiringRange() {
         launch()
         app.typeKey("r", modifierFlags: .command)
-        XCTAssertTrue(app.windows["Firing Range"].waitForExistence(timeout: 5), "⌘R opens the Firing Range")
+        XCTAssertTrue(app.textViews["range-practice"].firstMatch.waitForExistence(timeout: 5), "⌘R opens the Firing Range")
         XCTAssertTrue(app.textViews["range-practice"].firstMatch.exists)
     }
 

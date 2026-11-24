@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A practice window for trying quills: type in the text area and they fire for real,
+/// A practice page for trying quills: type in the text area and they fire for real,
 /// with a cheat sheet to click, a hit counter and an effect to try. Practice never
 /// counts towards Stats or History.
 struct FiringRangeView: View {
@@ -31,7 +31,6 @@ struct FiringRangeView: View {
             cheatSheet
                 .frame(width: 320)
         }
-        .frame(minWidth: 860, minHeight: 560)
         .navigationTitle("Firing Range")
         .toolbar {
             ToolbarItem {
@@ -56,11 +55,7 @@ struct FiringRangeView: View {
                 .help("Clear the text and the hit counter")
             }
         }
-        .onAppear {
-            isTyping = true
-            state.windowAppeared(WindowID.firingRange)
-        }
-        .onDisappear { state.windowDisappeared(WindowID.firingRange) }
+        .onAppear { isTyping = true }
     }
 
     // MARK: Practice

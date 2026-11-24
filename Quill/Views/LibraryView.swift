@@ -2,7 +2,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 /// The main window: a floating tab bar at the bottom switches between Quills (the
-/// sidebar of groups and the editor), Stats, History and Settings, with New in the middle.
+/// sidebar of groups and the editor), Stats, History, Firing Range and Settings, with New among them.
 struct LibraryView: View {
     @Environment(AppState.self) private var state
     @Environment(\.undoManager) private var undoManager
@@ -43,6 +43,8 @@ struct LibraryView: View {
                 NavigationStack { OverviewView() }
             case .history:
                 NavigationStack { HistoryView() }
+            case .firingRange:
+                NavigationStack { FiringRangeView() }
             case .settings:
                 NavigationStack { SettingsView() }
             }
@@ -421,8 +423,9 @@ private struct MainTabBar: View {
         var id: AppPage { page }
     }
 
-    private let leading = [Tab(page: .snippets, symbol: "rectangle.stack.fill"), Tab(page: .stats, symbol: "chart.bar.fill")]
-    private let trailing = [Tab(page: .history, symbol: "clock.fill"), Tab(page: .settings, symbol: "gearshape.fill")]
+    private let leading = [Tab(page: .snippets, symbol: "rectangle.stack.fill"), Tab(page: .stats, symbol: "chart.bar.fill"),
+                           Tab(page: .history, symbol: "clock.fill")]
+    private let trailing = [Tab(page: .firingRange, symbol: "scope"), Tab(page: .settings, symbol: "gearshape.fill")]
 
     var body: some View {
         HStack(spacing: 4) {

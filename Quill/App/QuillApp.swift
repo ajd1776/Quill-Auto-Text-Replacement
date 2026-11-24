@@ -36,20 +36,12 @@ struct QuillApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Window("Firing Range", id: WindowID.firingRange) {
-            FiringRangeView()
-                .environment(state)
-        }
-        .defaultSize(width: 980, height: 640)
-        .windowResizability(.contentMinSize)
-        .defaultLaunchBehavior(.suppressed)
     }
 }
 
 enum WindowID {
     static let library = "library"
     static let welcome = "welcome"
-    static let firingRange = "firingRange"
 }
 
 /// The menu bar icon. Also the one view that exists from launch, so it hands AppKit
@@ -63,7 +55,6 @@ private struct MenuBarLabel: View {
             .accessibilityLabel(state.status == .on ? "Quill, on" : "Quill, off")
             .onAppear {
                 state.openLibraryAction = { openWindow(id: WindowID.library) }
-                state.openFiringRangeAction = { openWindow(id: WindowID.firingRange) }
                 #if DEBUG
                 runDemoIfRequested()
                 #endif

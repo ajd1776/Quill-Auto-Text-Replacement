@@ -16,13 +16,14 @@ enum SidebarItem: Hashable {
 
 /// The pages in the library window's toolbar.
 enum AppPage: String, CaseIterable, Identifiable {
-    case snippets, stats, history, settings
+    case snippets, stats, history, firingRange, settings
     var id: String { rawValue }
     var title: String {
         switch self {
         case .snippets: "Quills"
         case .stats: "Stats"
         case .history: "History"
+        case .firingRange: "Firing Range"
         case .settings: "Settings"
         }
     }
@@ -31,6 +32,7 @@ enum AppPage: String, CaseIterable, Identifiable {
         case .snippets: "text.quote"
         case .stats: "chart.bar.xaxis"
         case .history: "clock.arrow.circlepath"
+        case .firingRange: "scope"
         case .settings: "gearshape"
         }
     }
@@ -272,14 +274,11 @@ final class AppState {
     /// The effect every quill uses in the Firing Range, or nil for each quill's own.
     var rangeEffect: ReplacementAnimation?
 
-    /// True while you're typing in the Firing Range window.
+    /// True while you're typing on the Firing Range page.
     var isFiringRangeKey: Bool {
-        guard NSApp.isActive, let window = NSApp.keyWindow else { return false }
-        return window.identifier?.rawValue.hasPrefix(WindowID.firingRange) == true || window.title == "Firing Range"
+        guard page == .firingRange, NSApp.isActive, let window = NSApp.keyWindow else { return false }
+        return window.title == AppPage.firingRange.title
     }
-
-    /// Opens the Firing Range window (set by the menu bar label, which has the SwiftUI environment).
-    @ObservationIgnored var openFiringRangeAction: (() -> Void)?
 
     /// Settings live in the main window, as a page in the sidebar.
     func showSettings(_ pane: SettingsPane? = nil) {
@@ -306,7 +305,8 @@ final class AppState {
 
     func showFiringRange() {
         NSApp.activate()
-        openFiringRangeAction?()
+        openLibraryAction?()
+        page = .firingRange
     }
     @ObservationIgnored private var visibleWindows = Set<String>()
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
