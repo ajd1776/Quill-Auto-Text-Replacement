@@ -30,13 +30,14 @@ enum SettingsPane: String, CaseIterable, Identifiable {
 }
 
 /// Quill Settings: one page in the main window, with an row of tabs
-/// along the top. Five tabs at most; About sits at the bottom of General.
+/// along the bottom, just above the main tab bar. Five tabs at most; About sits at the bottom of General.
 struct SettingsView: View {
     @AppStorage("settingsPane") private var stored: SettingsPane = .general
 
     private var pane: SettingsPane { stored == .about ? .general : stored }
 
     var body: some View {
+        VStack(spacing: 0) {
         ScrollView {
             VStack(spacing: 0) {
                 switch pane {
@@ -51,19 +52,17 @@ struct SettingsView: View {
             }
             .frame(maxWidth: 620)
             .frame(maxWidth: .infinity)
-            .padding(.top, 60)
-            .padding(.bottom, 12)
+            .padding(.vertical, 12)
         }
-        .overlay(alignment: .top) {
-            SettingsTabBar(selection: $stored, current: pane)
-                .padding(.top, 12)
+        SettingsTabBar(selection: $stored, current: pane)
+            .padding(.top, 10)
         }
         .navigationTitle("Settings")
     }
 }
 
-/// The Settings panes as a compact row of text tabs at the top of the page, the
-/// current one in a tinted capsule. The main tab bar sits at the bottom of the window.
+/// The Settings panes as a compact row of text tabs at the bottom of the page, just
+/// above the main tab bar, the current one in a tinted capsule.
 private struct SettingsTabBar: View {
     @Binding var selection: SettingsPane
     let current: SettingsPane
