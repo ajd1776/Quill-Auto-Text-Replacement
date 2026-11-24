@@ -8,6 +8,7 @@ import UniformTypeIdentifiers
 enum SidebarItem: Hashable {
     case overview
     case history
+    case settings
     case snippet(Snippet.ID)
 
     var snippetID: Snippet.ID? {
@@ -22,7 +23,7 @@ enum AppPage: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .snippets: "Snippets"
+        case .snippets: "Quills"
         case .stats: "Stats"
         case .history: "History"
         case .settings: "Settings"
@@ -201,13 +202,14 @@ final class AppState {
         get {
             if selection.contains(.history) { return .history }
             if selection.contains(.overview) { return .stats }
+            if selection.contains(.settings) { return .settings }
             return .snippets
         }
         set {
             switch newValue {
             case .stats: selection = [.overview]
             case .history: selection = [.history]
-            case .snippets: if selection.contains(.overview) || selection.contains(.history) { selection = [] }
+            case .snippets: if selection.contains(where: { $0.snippetID == nil }) { selection = [] }
             case .settings: showSettings()
             }
         }
@@ -228,7 +230,7 @@ final class AppState {
 
     func title(for scope: SnippetScope) -> String {
         switch scope {
-        case .all: "All Snippets"
+        case .all: "All Quills"
         case .recent: "Recently Used"
         case .enabled: "On"
         case .disabled: "Off"
@@ -259,12 +261,51 @@ final class AppState {
     }
 
     @ObservationIgnored var openLibraryAction: (() -> Void)?
-    /// Opens the Settings window (set by the menu bar label, which has the SwiftUI environment).
-    @ObservationIgnored var openSettingsAction: (() -> Void)?
+    // MARK: Firing Range
 
-    func showSettings() {
+    /// One expansion fired in the Firing Range.
+    struct RangeHit: Identifiable {
+        let id = UUID()
+        let snippetID: Snippet.ID
+        let trigger: String
+        let text: String
+        let style: ReplacementAnimation
+        let date = Date()
+        var keysSaved: Int { max(0, text.count - trigger.count) }
+
+        init(_ expansion: ExpansionEngine.Expansion) {
+            snippetID = expansion.snippet.id
+            trigger = expansion.snippet.trigger
+            text = expansion.renderedText
+            style = expansion.style
+        }
+    }
+
+    /// Expansions fired in the Firing Range since Quill opened, newest first.
+    var rangeHits: [RangeHit] = []
+    /// The effect every quill uses in the Firing Range, or nil for each quill's own.
+    var rangeEffect: ReplacementAnimation?
+
+    /// True while you're typing in the Firing Range window.
+    var isFiringRangeKey: Bool {
+        guard NSApp.isActive, let window = NSApp.keyWindow else { return false }
+        return window.identifier?.rawValue.hasPrefix(WindowID.firingRange) == true || window.title == "Firing Range"
+    }
+
+    /// Opens the Firing Range window (set by the menu bar label, which has the SwiftUI environment).
+    @ObservationIgnored var openFiringRangeAction: (() -> Void)?
+
+    /// Settings live in the main window, as a page in the sidebar.
+    func showSettings(_ pane: SettingsPane? = nil) {
+        if let pane { UserDefaults.standard.set(pane.rawValue, forKey: "settingsPane") }
         NSApp.activate()
-        openSettingsAction?()
+        openLibraryAction?()
+        selection = [.settings]
+    }
+
+    func showFiringRange() {
+        NSApp.activate()
+        openFiringRangeAction?()
     }
     @ObservationIgnored private var visibleWindows = Set<String>()
     @ObservationIgnored private var activationObserver: NSObjectProtocol?
@@ -309,7 +350,7 @@ final class AppState {
         registerHotkeys()
         if keepsDailyBackups { store.makeDailyBackup() }
         if let failure = store.loadFailure {
-            alertMessage = ("Snippets File Couldn't Be Read", failure)
+            alertMessage = ("Quills File Couldn't Be Read", failure)
         }
         monitor()
     }
@@ -349,9 +390,16 @@ final class AppState {
         engine.suggestionsEnabled = showsSuggestions
         engine.partialSuggestionsEnabled = showsPartialSuggestions
         engine.keepsTriggerSpace = addsSpaceAfterSnippet
-        engine.styleResolver = { [unowned self] snippet in snippet.animation ?? self.defaultAnimation }
+        engine.styleResolver = { [unowned self] snippet in
+            if self.isFiringRangeKey, let effect = self.rangeEffect { return effect }
+            return snippet.animation ?? self.defaultAnimation
+        }
         engine.onExpanded = { [unowned self] expansion in self.didExpand(expansion) }
         engine.onUndone = { [unowned self] id in
+            if self.isFiringRangeKey {
+                if let index = self.rangeHits.firstIndex(where: { $0.snippetID == id }) { self.rangeHits.remove(at: index) }
+                return
+            }
             self.store.undoUse(id)
             self.history.removeLatest(for: id)
         }
@@ -502,6 +550,13 @@ final class AppState {
     // MARK: Expansion
 
     private func didExpand(_ expansion: ExpansionEngine.Expansion) {
+        if isFiringRangeKey {
+            // Practice doesn't count towards Stats or History.
+            rangeHits.insert(RangeHit(expansion), at: 0)
+            playSound()
+            OverlayPresenter.shared.play(expansion.style, trigger: expansion.snippet.trigger, text: expansion.renderedText)
+            return
+        }
         store.recordUse(expansion.snippet.id)
         if keepsHistory {
             history.record(expansion.snippet, text: expansion.renderedText,
@@ -606,13 +661,13 @@ final class AppState {
             do {
                 let library = try QuillLibrary.decode(try Data(contentsOf: url))
                 let result = store.merge(library)
-                var message = "Added \(result.addedSnippets) \(result.addedSnippets == 1 ? "snippet" : "snippets")"
+                var message = "Added \(result.addedSnippets) \(result.addedSnippets == 1 ? "quill" : "quills")"
                 if result.addedGroups > 0 { message += " and \(result.addedGroups) \(result.addedGroups == 1 ? "group" : "groups")" }
                 message += "."
                 if result.skipped > 0 { message += " Skipped \(result.skipped) whose shortcut Quill already has." }
                 alertMessage = ("Import Complete", message)
             } catch {
-                alertMessage = ("Couldn't Import Snippets", "This file isn't a Quill export.")
+                alertMessage = ("Couldn't Import Quills", "This file isn't a Quill export.")
             }
             return
         }
@@ -628,15 +683,15 @@ final class AppState {
     func exportLibrary() {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [.json]
-        panel.nameFieldStringValue = "Quill Snippets \(SnippetStore.dayKey(for: Date())).json"
-        panel.message = "Export every snippet and group, to back up or move to another Mac."
+        panel.nameFieldStringValue = "Quill Library \(SnippetStore.dayKey(for: Date())).json"
+        panel.message = "Export every quill and group, to back up or move to another Mac."
         panel.prompt = "Export"
         NSApp.activate()
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try store.library.encoded().write(to: url, options: .atomic)
         } catch {
-            alertMessage = ("Couldn't Export Snippets", error.localizedDescription)
+            alertMessage = ("Couldn't Export Quills", error.localizedDescription)
         }
     }
 

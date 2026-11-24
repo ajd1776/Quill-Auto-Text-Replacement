@@ -91,9 +91,9 @@ struct IconColorEditor: View {
     private var title: String {
         switch target {
         case .group: "Edit Group"
-        case .snippet: "Edit Snippet"
+        case .snippet: "Edit Quill"
         case .newGroup: "New Group"
-        case .newSnippet: "New Snippet"
+        case .newSnippet: "New Quill"
         }
     }
 
@@ -155,7 +155,7 @@ struct IconColorEditor: View {
         if trimmed.contains(where: \.isWhitespace) { return ("Shortcuts can't contain spaces.", true) }
         let editingID: Snippet.ID? = if case .snippet(let id) = target { id } else { nil }
         if store.snippets.contains(where: { $0.trigger == trimmed && $0.id != editingID }) {
-            return ("Another snippet already uses this shortcut.", false)
+            return ("Another quill already uses this shortcut.", false)
         }
         return (nil, false)
     }
@@ -215,7 +215,7 @@ struct IconColorEditor: View {
         } header: {
             Text("Colour")
         } footer: {
-            Text(target.isSnippet ? "Colours this snippet's icon." : "Colours the group's icon and its snippets' icons.")
+            Text(target.isSnippet ? "Colours this quill's icon." : "Colours the group's icon and its quills' icons.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

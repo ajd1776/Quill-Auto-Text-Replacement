@@ -71,7 +71,7 @@ struct ImportView: View {
                 Button("Cancel", role: .cancel) { dismiss() }
                     .keyboardShortcut(.cancelAction)
 
-                Button(chosen.count == 1 ? "Import 1 Snippet" : "Import \(chosen.count) Snippets") {
+                Button(chosen.count == 1 ? "Import 1 Quill" : "Import \(chosen.count) Quills") {
                     state.finishImport(session.candidates.filter { chosen.contains($0.id) })
                 }
                 .keyboardShortcut(.defaultAction)

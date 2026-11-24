@@ -4,7 +4,7 @@ import Foundation
 // Actions for Apple's Shortcuts app and Spotlight.
 
 struct SnippetEntity: AppEntity {
-    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Snippet"
+    static let typeDisplayRepresentation: TypeDisplayRepresentation = "Quill"
     static let defaultQuery = SnippetQuery()
 
     let id: UUID
@@ -57,7 +57,7 @@ enum QuillPower: String, AppEnum {
 
 struct SetQuillIntent: AppIntent {
     static let title: LocalizedStringResource = "Turn Quill On or Off"
-    static let description = IntentDescription("Turns snippet expansion on, off, or toggles it.")
+    static let description = IntentDescription("Turns quill expansion on, off, or toggles it.")
 
     @Parameter(title: "Turn", default: .toggle)
     var state: QuillPower
@@ -79,10 +79,10 @@ struct SetQuillIntent: AppIntent {
 }
 
 struct GetSnippetTextIntent: AppIntent {
-    static let title: LocalizedStringResource = "Get Snippet Text"
-    static let description = IntentDescription("Returns a snippet's text, with date, time and clipboard tokens filled in.")
+    static let title: LocalizedStringResource = "Get Quill Text"
+    static let description = IntentDescription("Returns a quill's text, with date, time and clipboard tokens filled in.")
 
-    @Parameter(title: "Snippet")
+    @Parameter(title: "Quill")
     var snippet: SnippetEntity
 
     static var parameterSummary: some ParameterSummary {
@@ -99,10 +99,10 @@ struct GetSnippetTextIntent: AppIntent {
 }
 
 struct InsertSnippetIntent: AppIntent {
-    static let title: LocalizedStringResource = "Insert Snippet"
-    static let description = IntentDescription("Types a snippet into the app you're using, as if you'd typed its shortcut.")
+    static let title: LocalizedStringResource = "Insert Quill"
+    static let description = IntentDescription("Types a quill into the app you're using, as if you'd typed its shortcut.")
 
-    @Parameter(title: "Snippet")
+    @Parameter(title: "Quill")
     var snippet: SnippetEntity
 
     static var parameterSummary: some ParameterSummary {
@@ -120,8 +120,8 @@ struct InsertSnippetIntent: AppIntent {
 }
 
 struct AddSnippetIntent: AppIntent {
-    static let title: LocalizedStringResource = "Add Snippet"
-    static let description = IntentDescription("Creates a new Quill snippet.")
+    static let title: LocalizedStringResource = "Add Quill"
+    static let description = IntentDescription("Creates a new quill in Quill.")
 
     @Parameter(title: "Shortcut")
     var shortcut: String
@@ -130,7 +130,7 @@ struct AddSnippetIntent: AppIntent {
     var text: String
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Add snippet \(\.$shortcut) that types \(\.$text)")
+        Summary("Add quill \(\.$shortcut) that types \(\.$text)")
     }
 
     @MainActor
@@ -150,9 +150,9 @@ enum QuillIntentError: Error, CustomLocalizedStringResourceConvertible {
 
     var localizedStringResource: LocalizedStringResource {
         switch self {
-        case .snippetMissing: "That snippet no longer exists in Quill."
+        case .snippetMissing: "That quill no longer exists in Quill."
         case .badShortcut: "A shortcut can't be empty or contain spaces."
-        case .shortcutTaken(let shortcut): "Another snippet already uses \(shortcut)."
+        case .shortcutTaken(let shortcut): "Another quill already uses \(shortcut)."
         }
     }
 }
@@ -167,8 +167,8 @@ struct QuillShortcuts: AppShortcutsProvider {
         )
         AppShortcut(
             intent: InsertSnippetIntent(),
-            phrases: ["Insert a snippet with \(.applicationName)"],
-            shortTitle: "Insert Snippet",
+            phrases: ["Insert a quill with \(.applicationName)"],
+            shortTitle: "Insert Quill",
             systemImageName: "text.insert"
         )
     }

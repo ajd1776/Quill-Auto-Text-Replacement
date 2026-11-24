@@ -13,7 +13,7 @@ struct WelcomeView: View {
     @State private var replacements: [MacReplacementsImporter.Entry]?
     @State private var importedCount: Int?
 
-    private let steps = ["Welcome", "Access", "Snippets", "Ready"]
+    private let steps = ["Welcome", "Access", "Quills", "Ready"]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -66,8 +66,8 @@ struct WelcomeView: View {
             }
             VStack(alignment: .leading, spacing: 14) {
                 feature("keyboard", .blue, "Works in every app", "Mail, Safari, Notes, Messages, Slack and the rest.")
-                feature("text.bubble", .purple, "Suggests as you type", "A bubble above your text shows matching snippets.")
-                feature("lock.fill", .green, "Private by design", "Snippets stay on this Mac. Password fields are always skipped.")
+                feature("text.bubble", .purple, "Suggests as you type", "A bubble above your text shows matching quills.")
+                feature("lock.fill", .green, "Private by design", "Quills stay on this Mac. Password fields are always skipped.")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -127,7 +127,7 @@ struct WelcomeView: View {
         VStack(spacing: 16) {
             StepIcon(symbol: "square.stack.3d.up.fill", color: .orange)
             VStack(spacing: 6) {
-                Text("Bring In Your Snippets")
+                Text("Bring In Your Quills")
                     .font(.title.weight(.bold))
                 Text("Start with what you already use, add a pack, or skip this and make your own.")
                     .foregroundStyle(.secondary)
@@ -175,8 +175,8 @@ struct WelcomeView: View {
                     .multilineTextAlignment(.center)
             }
             VStack(alignment: .leading, spacing: 14) {
-                feature("menubar.rectangle", .purple, "Menu bar", "Search, switch snippets on and off, or pause Quill from the icon in the menu bar.")
-                feature("command", .blue, "Command palette", "Press ⌘K in Quill's window to run any action or jump to a snippet.")
+                feature("menubar.rectangle", .purple, "Menu bar", "Search, switch quills on and off, or pause Quill from the icon in the menu bar.")
+                feature("command", .blue, "Command palette", "Press ⌘K in Quill's window to run any action or jump to a quill.")
                 feature("curlybraces", .orange, "Tokens", "Add {date}, {clipboard}, {cursor} or a fill-in field with Insert Token.")
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -239,7 +239,7 @@ struct WelcomeView: View {
 
     private var replacementsDetail: String {
         guard let replacements else { return "Looking…" }
-        if let importedCount { return importedCount == 0 ? "Already in Quill" : "Added \(importedCount) \(importedCount == 1 ? "snippet" : "snippets")" }
+        if let importedCount { return importedCount == 0 ? "Already in Quill" : "Added \(importedCount) \(importedCount == 1 ? "quill" : "quills")" }
         return replacements.isEmpty ? "None found on this Mac" : "\(replacements.count) found on this Mac"
     }
 

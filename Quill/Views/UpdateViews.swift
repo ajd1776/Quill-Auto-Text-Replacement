@@ -122,7 +122,7 @@ struct UpdateSettingsSection: View {
         } header: {
             Text("Updates")
         } footer: {
-            Text("Checks GitHub Releases once a day. Nothing about you or your snippets is sent.")
+            Text("Checks GitHub Releases once a day. Nothing about you or your quills is sent.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

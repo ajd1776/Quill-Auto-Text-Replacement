@@ -99,7 +99,7 @@ final class SnippetStore {
         guard let data = try? Data(contentsOf: Self.fileURL) else {
             // The file is there but can't be opened: don't risk replacing it with an empty library.
             isSaveBlocked = true
-            loadFailure = "Quill couldn't open its snippets file, so it won't save changes until you restart it. Check the file in Settings › Backup."
+            loadFailure = "Quill couldn't open its quills file, so it won't save changes until you restart it. Check the file in Settings › Backup."
             quillLog.error("Store: snippets.json exists but couldn't be opened")
             return
         }
@@ -113,7 +113,7 @@ final class SnippetStore {
             let aside = Self.folderURL.appending(path: "snippets (unreadable \(Self.dayKey(for: Date()))).json", directoryHint: .notDirectory)
             try? FileManager.default.removeItem(at: aside)
             try? FileManager.default.moveItem(at: Self.fileURL, to: aside)
-            loadFailure = "Quill couldn't read its snippets file, so it moved it aside as \u{201C}\(aside.lastPathComponent)\u{201D} and started fresh. Your daily backups are in the Backups folder."
+            loadFailure = "Quill couldn't read its quills file, so it moved it aside as \u{201C}\(aside.lastPathComponent)\u{201D} and started fresh. Your daily backups are in the Backups folder."
             quillLog.error("Store: couldn't read snippets.json: \(error.localizedDescription, privacy: .public)")
         }
     }
@@ -222,7 +222,7 @@ final class SnippetStore {
                 }
             }
         }
-        undoManager?.setActionName(removed.count == 1 ? "Delete Snippet" : "Delete Snippets")
+        undoManager?.setActionName(removed.count == 1 ? "Delete Quill" : "Delete Quills")
     }
 
     func setEnabled(_ id: Snippet.ID, _ isEnabled: Bool) {
@@ -456,11 +456,11 @@ final class SnippetStore {
 
     /// A short message describing why a snippet's shortcut won't work, or nil if it's fine.
     func problem(with snippet: Snippet) -> String? {
-        if snippet.trigger.isEmpty { return "Enter a shortcut to use this snippet." }
+        if snippet.trigger.isEmpty { return "Enter a shortcut to use this quill." }
         if snippet.trigger.contains(where: \.isWhitespace) { return "Shortcuts can't contain spaces." }
         if snippet.expansion.isEmpty { return "Add the text this shortcut expands to." }
         let duplicate = snippets.contains { $0.id != snippet.id && $0.trigger == snippet.trigger }
-        if duplicate { return "Another snippet already uses this shortcut." }
+        if duplicate { return "Another quill already uses this shortcut." }
         return nil
     }
 }

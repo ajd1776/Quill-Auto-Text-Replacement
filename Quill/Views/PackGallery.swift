@@ -42,7 +42,7 @@ private struct PackCard: View {
             VStack(alignment: .leading, spacing: 6) {
                 HStack(spacing: 8) {
                     Text(pack.name).font(.headline)
-                    Text("\(pack.entries.count) snippets")
+                    Text("\(pack.entries.count) quills")
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.secondary)
                 }
@@ -69,7 +69,7 @@ private struct PackCard: View {
                 Button("Remove", role: .destructive) {
                     state.store.uninstall(pack)
                 }
-                .help("Removes the group and its snippets")
+                .help("Removes the group and its quills")
             } else {
                 Button("Add") {
                     state.store.install(pack)

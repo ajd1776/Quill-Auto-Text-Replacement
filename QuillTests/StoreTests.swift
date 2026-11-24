@@ -36,7 +36,7 @@ final class StoreTests: XCTestCase {
         let empty = store.add(trigger: "solo", expansion: "")
         XCTAssertEqual(store.problem(with: empty), "Add the text this shortcut expands to.")
         let twin = store.add(trigger: "eml", expansion: "other")
-        XCTAssertEqual(store.problem(with: twin), "Another snippet already uses this shortcut.")
+        XCTAssertEqual(store.problem(with: twin), "Another quill already uses this shortcut.")
         let fine = store.add(trigger: "fine", expansion: "ok")
         XCTAssertNil(store.problem(with: fine))
     }
@@ -179,7 +179,7 @@ final class ScopeTests: XCTestCase {
             XCTAssertTrue(state.snippets(in: .group(group.id)).allSatisfy { $0.groupID == group.id })
             XCTAssertEqual(state.title(for: .group(group.id)), group.name)
         }
-        XCTAssertEqual(state.title(for: .all), "All Snippets")
+        XCTAssertEqual(state.title(for: .all), "All Quills")
     }
 
     func testSidebarSelectionDrivesThePage() {
@@ -197,6 +197,13 @@ final class ScopeTests: XCTestCase {
         XCTAssertEqual(state.selection, [.history], "Setting the page selects it in the sidebar")
         state.page = .stats
         XCTAssertEqual(state.selection, [.overview])
+        state.page = .settings
+        XCTAssertEqual(state.selection, [.settings], "Settings is a page in the main window")
+        XCTAssertEqual(state.page, .settings)
+        state.showSettings(.backup)
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "settingsPane"), "backup", "Opening a pane remembers it")
+        state.page = .snippets
+        XCTAssertTrue(state.selection.isEmpty, "Leaving Settings clears the selection")
         state.page = .snippets
         XCTAssertTrue(state.selection.isEmpty)
     }

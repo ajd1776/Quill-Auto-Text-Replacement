@@ -25,14 +25,14 @@ struct OverviewView: View {
                              detail: "in \(period) days · \(store.totalUses.formatted()) in all", symbol: "text.insert", color: .blue)
                     StatTile(title: "Streak", value: streakText,
                              detail: "Best day: \(QuillStats.bestDay(store.dailyUses).formatted()) expansions", symbol: "flame", color: .orange)
-                    StatTile(title: "Snippets On", value: store.activeSnippets.count.formatted(),
+                    StatTile(title: "Quills On", value: store.activeSnippets.count.formatted(),
                              detail: "of \(store.snippets.count) · \(store.groups.count) \(store.groups.count == 1 ? "group" : "groups")",
                              symbol: "checkmark.circle", color: .green)
                 }
 
                 Card(title: "Expansions per Day", subtitle: "Last \(period) days") {
                     if periodUses == 0 {
-                        EmptyNote(text: "Use a snippet and your daily activity appears here.")
+                        EmptyNote(text: "Use a quill and your daily activity appears here.")
                     } else {
                         dailyChart(days, average: Double(periodUses) / Double(max(period, 1)))
                     }
@@ -48,7 +48,7 @@ struct OverviewView: View {
                 }
 
                 HStack(alignment: .top, spacing: 12) {
-                    Card(title: "Top Snippets", subtitle: "Most expansions") {
+                    Card(title: "Top Quills", subtitle: "Most expansions") {
                         topSnippets
                     }
                     Card(title: "Groups", subtitle: "Expansions by group") {
@@ -159,7 +159,7 @@ struct OverviewView: View {
     private var hoursChart: some View {
         let hours = QuillStats.hours(state.history.entries)
         if hours.allSatisfy({ $0 == 0 }) {
-            EmptyNote(text: state.keepsHistory ? "Expand a few snippets to see when you use Quill." : "Turn on history in Settings to see this.")
+            EmptyNote(text: state.keepsHistory ? "Expand a few quills to see when you use Quill." : "Turn on history in Settings to see this.")
         } else {
             let peak = hours.firstIndex(of: hours.max() ?? 0) ?? 0
             VStack(alignment: .leading, spacing: 8) {
@@ -195,7 +195,7 @@ struct OverviewView: View {
     private var topApps: some View {
         let apps = QuillStats.topApps(state.history.entries)
         if apps.isEmpty {
-            EmptyNote(text: "Apps you expand snippets in appear here.")
+            EmptyNote(text: "Apps you expand quills in appear here.")
         } else {
             let most = max(apps.first?.uses ?? 1, 1)
             VStack(spacing: 10) {
@@ -266,9 +266,9 @@ struct OverviewView: View {
     private var tidyUp: some View {
         let unused = QuillStats.unused(store.snippets)
         let problems = store.snippets.compactMap { snippet in store.problem(with: snippet).map { (snippet, $0) } }
-        Card(title: "Tidy Up", subtitle: "Snippets that need a look") {
+        Card(title: "Tidy Up", subtitle: "Quills that need a look") {
             if unused.isEmpty && problems.isEmpty {
-                Label("Nothing to tidy up. Every snippet is working and in use.", systemImage: "checkmark.circle.fill")
+                Label("Nothing to tidy up. Every quill is working and in use.", systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .font(.callout)
             } else {
@@ -392,7 +392,7 @@ private struct TidyRow: View {
         HStack(spacing: 10) {
             SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: state.store.tint(for: snippet), size: 24)
             VStack(alignment: .leading, spacing: 1) {
-                Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
+                Text(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
                     .font(.callout.monospaced().weight(.semibold))
                 Label(detail, systemImage: symbol)
                     .font(.caption)

@@ -36,16 +36,20 @@ struct QuillApp: App {
         }
         .menuBarExtraStyle(.window)
 
-        Settings {
-            SettingsView()
+        Window("Firing Range", id: WindowID.firingRange) {
+            FiringRangeView()
                 .environment(state)
         }
+        .defaultSize(width: 980, height: 640)
+        .windowResizability(.contentMinSize)
+        .defaultLaunchBehavior(.suppressed)
     }
 }
 
 enum WindowID {
     static let library = "library"
     static let welcome = "welcome"
+    static let firingRange = "firingRange"
 }
 
 /// The menu bar icon. Also the one view that exists from launch, so it hands AppKit
@@ -53,14 +57,13 @@ enum WindowID {
 private struct MenuBarLabel: View {
     @Environment(AppState.self) private var state
     @Environment(\.openWindow) private var openWindow
-    @Environment(\.openSettings) private var openSettings
 
     var body: some View {
         Image(nsImage: state.menuBarIcon.image(isOn: state.status == .on))
             .accessibilityLabel(state.status == .on ? "Quill, on" : "Quill, off")
             .onAppear {
                 state.openLibraryAction = { openWindow(id: WindowID.library) }
-                state.openSettingsAction = { openSettings() }
+                state.openFiringRangeAction = { openWindow(id: WindowID.firingRange) }
                 #if DEBUG
                 runDemoIfRequested()
                 #endif
@@ -119,8 +122,9 @@ private struct MenuBarLabel: View {
             case "welcome":
                 openWindow(id: WindowID.welcome)
             case "general", "suggestions", "effects", "shortcuts", "backup", "about":
-                UserDefaults.standard.set(demo, forKey: "settingsPane")
-                openSettings()
+                state.showSettings(SettingsPane(rawValue: demo))
+            case "range":
+                state.showFiringRange()
             case "history":
                 state.page = .history
                 openWindow(id: WindowID.library)
@@ -174,7 +178,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// SwiftUI apps opt into automatic termination by default; switch it off before launch finishes.
     func applicationWillFinishLaunching(_ notification: Notification) {
         ProcessInfo.processInfo.automaticTerminationSupportEnabled = false
-        ProcessInfo.processInfo.disableAutomaticTermination("Quill expands snippets in the background")
+        ProcessInfo.processInfo.disableAutomaticTermination("Quill expands quills in the background")
         ProcessInfo.processInfo.disableSuddenTermination()
     }
 

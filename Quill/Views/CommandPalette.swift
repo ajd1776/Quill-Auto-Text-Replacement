@@ -4,7 +4,6 @@ import SwiftUI
 struct CommandPalette: View {
     @Environment(AppState.self) private var state
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openSettings) private var openSettings
 
     @State private var query = ""
     @State private var highlighted = 0
@@ -22,23 +21,24 @@ struct CommandPalette: View {
 
     private var commands: [Item] {
         var list: [Item] = [
-            Item(id: "new", title: "New Snippet", subtitle: "⌘N", symbol: "square.and.pencil", color: .blue) { state.newSnippet() },
+            Item(id: "new", title: "New Quill", subtitle: "⌘N", symbol: "square.and.pencil", color: .blue) { state.newSnippet() },
             Item(id: "group", title: "New Group", subtitle: "⇧⌘N", symbol: "folder.badge.plus", color: .teal) { state.newGroup() },
             Item(id: "overview", title: "Show Stats", subtitle: "⌘2", symbol: "chart.bar.xaxis", color: .purple) { state.page = .stats },
             Item(id: "power", title: state.isOn ? "Turn Quill Off" : "Turn Quill On", subtitle: "⇧⌘P",
                  symbol: state.isOn ? "pause.circle" : "play.circle", color: state.isOn ? .orange : .green) { state.setOn(!state.isOn) },
-            Item(id: "search", title: "Search and Insert Snippet", subtitle: "Floating panel", symbol: "magnifyingglass", color: .indigo) {
+            Item(id: "search", title: "Search and Insert Quill", subtitle: "Floating panel", symbol: "magnifyingglass", color: .indigo) {
                 NSApp.hide(nil)
                 SearchPanelController.shared.show()
             },
             Item(id: "packs", title: "Add Starter Pack…", subtitle: "Emoji, typos, dates", symbol: "shippingbox", color: .orange) { state.isShowingPacks = true },
             Item(id: "history", title: "Show History", subtitle: "⌘3", symbol: "clock.arrow.circlepath", color: .teal) { state.page = .history },
             Item(id: "importMac", title: "Import Text Replacements from macOS", subtitle: "File menu", symbol: "square.and.arrow.down", color: .gray) { state.beginSystemImport() },
-            Item(id: "import", title: "Import Snippets…", subtitle: "⇧⌘I", symbol: "tray.and.arrow.down", color: .gray) { state.isShowingFileImporter = true },
-            Item(id: "export", title: "Export Snippets…", subtitle: "⇧⌘E", symbol: "tray.and.arrow.up", color: .gray) { state.exportLibrary() },
+            Item(id: "import", title: "Import Quills…", subtitle: "⇧⌘I", symbol: "tray.and.arrow.down", color: .gray) { state.isShowingFileImporter = true },
+            Item(id: "export", title: "Export Quills…", subtitle: "⇧⌘E", symbol: "tray.and.arrow.up", color: .gray) { state.exportLibrary() },
             Item(id: "updates", title: "Check for Updates…", subtitle: "Quill \(UpdateChecker.currentVersion)", symbol: "arrow.down.circle", color: .blue) {
                 Task { await state.updates.check(manual: true) }
             },
+            Item(id: "range", title: "Open Firing Range", subtitle: "⌘R", symbol: "scope", color: .orange) { state.showFiringRange() },
             Item(id: "settings", title: "Settings…", subtitle: "⌘,", symbol: "gearshape", color: .gray) { state.page = .settings },
         ]
         for order in SnippetSortOrder.allCases where order != state.sortOrder {
@@ -54,7 +54,7 @@ struct CommandPalette: View {
             .map { snippet in
                 let group = state.store.group(for: snippet)
                 return Item(id: snippet.id.uuidString,
-                            title: snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger,
+                            title: snippet.trigger.isEmpty ? "New Quill" : snippet.trigger,
                             subtitle: snippet.preview,
                             symbol: snippet.symbol ?? group?.symbol ?? "text.quote",
                             color: state.store.tint(for: snippet)) {
@@ -82,7 +82,7 @@ struct CommandPalette: View {
                 Image(systemName: "command")
                     .font(.system(size: 18, weight: .semibold))
                     .foregroundStyle(.tint)
-                TextField("Type a command or a snippet", text: $query)
+                TextField("Type a command or a quill", text: $query)
                     .textFieldStyle(.plain)
                     .font(.title3)
                     .focused($isFieldFocused)

@@ -189,11 +189,11 @@ struct SearchPanelView: View {
                     .font(.system(size: 20, weight: .medium))
                     .foregroundStyle(.secondary)
                     .accessibilityHidden(true)
-                TextField("Search Snippets", text: $model.query)
+                TextField("Search Quills", text: $model.query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 22))
                     .focused($isFieldFocused)
-                    .accessibilityLabel("Search snippets")
+                    .accessibilityLabel("Search quills")
             }
             .padding(.horizontal, 20)
             .frame(height: 64)
@@ -230,7 +230,7 @@ struct SearchPanelView: View {
                 .frame(height: 32)
             } else {
                 Divider().padding(.horizontal, 12)
-                Text(model.hasSnippets ? "No Matching Snippets" : "No snippets yet. Add some in the Quill library.")
+                Text(model.hasSnippets ? "No Matching Quills" : "No quills yet. Add some in the Quill library.")
                     .foregroundStyle(.secondary)
                     .frame(height: 52)
             }

@@ -58,7 +58,7 @@ final class QuillUITests: XCTestCase {
         let field = app.textFields["Shortcut"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5), "The editor should open")
         XCTAssertEqual(field.value as? String, "eml")
-        XCTAssertTrue(app.buttons["Delete Snippet"].exists)
+        XCTAssertTrue(app.buttons["Delete Quill"].exists)
     }
 
     func testNewSnippet() {
@@ -213,11 +213,20 @@ final class QuillUITests: XCTestCase {
         XCTAssertFalse(row("eml").exists, "Searching hides snippets that don't match")
     }
 
-    func testSettingsWindow() {
+    func testSettingsPage() {
         launch()
         app.typeKey(",", modifierFlags: .command)
-        let general = app.toolbars.buttons["General"].firstMatch
-        XCTAssertTrue(general.waitForExistence(timeout: 5), "Settings opens in its own window")
+        let general = app.buttons["settings-tab-general"].firstMatch
+        XCTAssertTrue(general.waitForExistence(timeout: 5), "Settings opens as a page in the main window")
+        app.buttons["settings-tab-effects"].firstMatch.click()
+        XCTAssertTrue(text("Effect").waitForExistence(timeout: 5) || app.popUpButtons.firstMatch.exists)
+    }
+
+    func testFiringRange() {
+        launch()
+        app.typeKey("r", modifierFlags: .command)
+        XCTAssertTrue(app.windows["Firing Range"].waitForExistence(timeout: 5), "⌘R opens the Firing Range")
+        XCTAssertTrue(app.textViews["range-practice"].firstMatch.exists)
     }
 
     func testWelcomeTour() {
@@ -228,7 +237,7 @@ final class QuillUITests: XCTestCase {
         next.click()
         XCTAssertTrue(text("Allow Accessibility Access").waitForExistence(timeout: 5))
         next.click()
-        XCTAssertTrue(text("Bring In Your Snippets").waitForExistence(timeout: 5))
+        XCTAssertTrue(text("Bring In Your Quills").waitForExistence(timeout: 5))
         next.click()
         XCTAssertTrue(text("You're Ready").waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Open Quill"].exists)

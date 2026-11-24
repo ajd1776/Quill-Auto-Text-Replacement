@@ -28,7 +28,7 @@ struct SnippetActionsMenu: View {
             }
         }
 
-        Button(ids.count == 1 ? "Duplicate" : "Duplicate \(ids.count) Snippets", systemImage: "plus.square.on.square") {
+        Button(ids.count == 1 ? "Duplicate" : "Duplicate \(ids.count) Quills", systemImage: "plus.square.on.square") {
             state.selection = Set(ids.map { .snippet($0) })
             state.duplicateSelection()
         }
@@ -77,7 +77,7 @@ struct SnippetActionsMenu: View {
 
         Divider()
 
-        Button(ids.count == 1 ? "Delete" : "Delete \(ids.count) Snippets", systemImage: "trash", role: .destructive) {
+        Button(ids.count == 1 ? "Delete" : "Delete \(ids.count) Quills", systemImage: "trash", role: .destructive) {
             onDelete(ids)
         }
     }
@@ -101,7 +101,7 @@ struct GroupActionsMenu: View {
     var body: some View {
         let store = state.store
 
-        Button("New Snippet in \u{201C}\(group.name)\u{201D}", systemImage: "square.and.pencil") {
+        Button("New Quill in \u{201C}\(group.name)\u{201D}", systemImage: "square.and.pencil") {
             state.newSnippet(in: group.id)
         }
         Button(group.isEnabled ? "Turn Group Off" : "Turn Group On", systemImage: group.isEnabled ? "pause.circle" : "play.circle") {

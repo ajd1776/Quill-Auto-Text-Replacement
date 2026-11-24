@@ -13,8 +13,11 @@ struct QuillCommands: Commands {
             }
         }
 
-        CommandGroup(after: .appSettings) {
-            Toggle("Expand Snippets", isOn: Binding(
+        CommandGroup(replacing: .appSettings) {
+            Button("Settings…") { state.showSettings() }
+                .keyboardShortcut(",")
+
+            Toggle("Expand Quills", isOn: Binding(
                 get: { state.isOn },
                 set: { state.setOn($0) }
             ))
@@ -22,7 +25,7 @@ struct QuillCommands: Commands {
         }
 
         CommandGroup(replacing: .newItem) {
-            Button("New Snippet") {
+            Button("New Quill") {
                 showLibrary()
                 state.newSnippet()
             }
@@ -47,7 +50,7 @@ struct QuillCommands: Commands {
                 state.beginSystemImport()
             }
 
-            Button("Import Snippets…") {
+            Button("Import Quills…") {
                 showLibrary()
                 state.isShowingFileImporter = true
             }
@@ -58,13 +61,13 @@ struct QuillCommands: Commands {
                 state.isShowingPacks = true
             }
 
-            Button("Export Snippets…") {
+            Button("Export Quills…") {
                 state.exportLibrary()
             }
             .keyboardShortcut("e", modifiers: [.command, .shift])
         }
 
-        CommandMenu("Snippet") {
+        CommandMenu("Quills") {
             SnippetActionsMenu(ids: state.selectedSnippetIDs) { ids in
                 state.store.delete(ids, undoManager: nil)
                 state.selection = []
@@ -91,6 +94,9 @@ struct QuillCommands: Commands {
                 state.page = .history
             }
             .keyboardShortcut("y")
+
+            Button("Firing Range") { state.showFiringRange() }
+                .keyboardShortcut("r")
 
             Picker("Sort By", selection: Binding(
                 get: { state.sortOrder },

@@ -73,7 +73,7 @@ struct MenuBarPanel: View {
 
             if snippets.isEmpty {
                 ContentUnavailableView {
-                    Label(store.snippets.isEmpty ? "No Snippets" : "No Matches", systemImage: "text.magnifyingglass")
+                    Label(store.snippets.isEmpty ? "No Quills" : "No Matches", systemImage: "text.magnifyingglass")
                 } description: {
                     Text(store.snippets.isEmpty ? "Make one in the library." : "Try another search or filter.")
                 }
@@ -200,7 +200,7 @@ struct MenuBarPanel: View {
         switch state.status {
         case .on:
             let count = store.activeSnippets.count
-            return "On · \(count) \(count == 1 ? "snippet" : "snippets")"
+            return "On · \(count) \(count == 1 ? "quill" : "quills")"
         case .off:
             return "Off"
         case .pausedUntil(let date):
@@ -218,7 +218,7 @@ struct MenuBarPanel: View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass")
                 .foregroundStyle(.secondary)
-            TextField("Search snippets", text: $query)
+            TextField("Search quills", text: $query)
                 .textFieldStyle(.plain)
                 .focused($isSearchFocused)
                 .onSubmit {
@@ -268,7 +268,7 @@ struct MenuBarPanel: View {
 
     private var footer: some View {
         HStack(spacing: 2) {
-            FooterButton(title: "New Snippet", symbol: "square.and.pencil") {
+            FooterButton(title: "New Quill", symbol: "square.and.pencil") {
                 openLibrary()
                 state.page = .snippets
                 state.newSnippet()
@@ -281,9 +281,13 @@ struct MenuBarPanel: View {
                 state.page = .stats
                 openLibrary()
             }
+            FooterButton(title: "Firing Range", symbol: "scope") {
+                closePanel()
+                state.showFiringRange()
+            }
             FooterButton(title: "Settings", symbol: "gearshape") {
-                state.page = .settings
-                openLibrary()
+                closePanel()
+                state.showSettings()
             }
             Spacer()
             FooterButton(title: "Quit", symbol: "power") { NSApp.terminate(nil) }
@@ -324,7 +328,7 @@ private struct PanelRow: View {
                 HStack(spacing: 10) {
                     SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: state.store.tint(for: snippet), size: 28)
                     VStack(alignment: .leading, spacing: 1) {
-                        Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
+                        Text(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
                             .font(.callout.monospaced().weight(.semibold))
                             .lineLimit(1)
                         Text(snippet.preview)

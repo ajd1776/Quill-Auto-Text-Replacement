@@ -29,7 +29,7 @@ struct SnippetDetailView: View {
             footer
         }
         .background(Color(nsColor: .textBackgroundColor))
-        .navigationTitle(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
+        .navigationTitle(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
         .toolbar {
             ToolbarItemGroup(placement: .primaryAction) {
                 Button("Copy Text", systemImage: "doc.on.doc") {
@@ -38,8 +38,8 @@ struct SnippetDetailView: View {
                 .help("Copy Text")
                 .disabled(snippet.expansion.isEmpty)
 
-                Button("Delete Snippet", systemImage: "trash", action: onDelete)
-                    .help("Delete Snippet")
+                Button("Delete Quill", systemImage: "trash", action: onDelete)
+                    .help("Delete Quill")
             }
         }
         .onAppear {
@@ -94,11 +94,11 @@ struct SnippetDetailView: View {
 
             Spacer(minLength: 0)
 
-            Toggle("Snippet on", isOn: $snippet.isEnabled)
+            Toggle("Quill on", isOn: $snippet.isEnabled)
                 .toggleStyle(.switch)
                 .labelsHidden()
                 .help(snippet.isEnabled ? "Turn Off" : "Turn On")
-                .accessibilityLabel("Snippet on")
+                .accessibilityLabel("Quill on")
         }
         .padding(.horizontal, inset)
         .padding(.top, 22)
@@ -306,7 +306,7 @@ struct SnippetDetailView: View {
             Label(appsTitle, systemImage: snippet.appBundleIDs.isEmpty ? "macwindow.on.rectangle" : "app.badge.checkmark")
         }
         .fixedSize()
-        .help("Limit this snippet to certain apps")
+        .help("Limit this quill to certain apps")
     }
 
     private func chooseApp() {

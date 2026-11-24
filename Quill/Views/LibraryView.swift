@@ -116,14 +116,14 @@ struct LibraryView: View {
             titleVisibility: .visible
         ) {
             if let id = state.deletingGroupID {
-                Button("Keep Snippets") { store.deleteGroup(id, keepingSnippets: true) }
-                Button("Delete Group and Snippets", role: .destructive) {
+                Button("Keep Quills") { store.deleteGroup(id, keepingSnippets: true) }
+                Button("Delete Group and Quills", role: .destructive) {
                     store.deleteGroup(id, keepingSnippets: false)
                 }
                 Button("Cancel", role: .cancel) {}
             }
         } message: {
-            Text("Keeping the snippets moves them out of the group.")
+            Text("Keeping the quills moves them out of the group.")
         }
         .tracksWindow(WindowID.library)
     }
@@ -157,6 +157,8 @@ struct LibraryView: View {
                 SidebarLink(title: "History", symbol: "clock.arrow.circlepath", color: .teal,
                             badge: state.history.entries.isEmpty ? nil : "\(state.history.entries.count)")
                     .tag(SidebarItem.history)
+                SidebarLink(title: "Settings", symbol: "gearshape.fill", color: .gray)
+                    .tag(SidebarItem.settings)
             }
 
             // Collapsing is done with our own larger arrow, so sections are plain and rows are skipped when collapsed.
@@ -166,7 +168,7 @@ struct LibraryView: View {
                 } header: {
                     DropHeader(groupID: nil) {
                         HStack(spacing: 8) {
-                            Text(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                            Text(store.groups.isEmpty ? "Quills" : "Ungrouped")
                                 .font(.subheadline.weight(.semibold))
                             Spacer()
                             DisclosureArrow(isExpanded: $ungroupedExpanded)
@@ -176,7 +178,7 @@ struct LibraryView: View {
                             withAnimation(.snappy(duration: 0.2)) { ungroupedExpanded.toggle() }
                         }
                         .accessibilityElement(children: .ignore)
-                        .accessibilityLabel(store.groups.isEmpty ? "Snippets" : "Ungrouped")
+                        .accessibilityLabel(store.groups.isEmpty ? "Quills" : "Ungrouped")
                         .accessibilityValue(ungroupedExpanded ? "expanded" : "collapsed")
                         .accessibilityAddTraits(.isHeader)
                         .accessibilityAction(named: ungroupedExpanded ? "Collapse" : "Expand") { ungroupedExpanded.toggle() }
@@ -210,11 +212,11 @@ struct LibraryView: View {
         .overlay {
             if store.snippets.isEmpty {
                 ContentUnavailableView {
-                    Label("No Snippets", systemImage: "pencil.line")
+                    Label("No Quills", systemImage: "pencil.line")
                 } description: {
-                    Text("Create a snippet, or bring in the text replacements you already use.")
+                    Text("Create a quill, or bring in the text replacements you already use.")
                 } actions: {
-                    Button("New Snippet") { state.newSnippet() }
+                    Button("New Quill") { state.newSnippet() }
                     Button("Import from macOS") { state.beginSystemImport() }
                 }
             } else if isSearching, store.snippets.allSatisfy({ visible([$0]).isEmpty }) {
@@ -231,11 +233,11 @@ struct LibraryView: View {
         }
         .toolbar {
             ToolbarItemGroup {
-                Button("New Snippet", systemImage: "plus.circle") {
+                Button("New Quill", systemImage: "plus.circle") {
                     searchText = ""
                     state.newSnippet()
                 }
-                .help("New Snippet (⌘N)")
+                .help("New Quill (⌘N)")
 
                 Button("New Group", systemImage: "folder.badge.plus") {
                     state.newGroup()
@@ -252,7 +254,7 @@ struct LibraryView: View {
                 ToolbarDivider()
 
                 Menu {
-                    Button("New Snippet", systemImage: "plus.circle") {
+                    Button("New Quill", systemImage: "plus.circle") {
                         searchText = ""
                         state.newSnippet()
                     }
@@ -260,16 +262,16 @@ struct LibraryView: View {
                     Divider()
                     Button("Add Starter Pack…", systemImage: "shippingbox") { state.isShowingPacks = true }
                     Button("Import Text Replacements…", systemImage: "square.and.arrow.down") { state.beginSystemImport() }
-                    Button("Import Snippets…", systemImage: "tray.and.arrow.down") { state.isShowingFileImporter = true }
+                    Button("Import Quills…", systemImage: "tray.and.arrow.down") { state.isShowingFileImporter = true }
                 } label: {
                     // A fixed-size image: the toolbar would scale a symbol up to full size.
                     Image(nsImage: Self.smallChevron)
-                        .accessibilityLabel("More Ways to Add Snippets")
+                        .accessibilityLabel("More Ways to Add Quills")
                 }
                 .menuStyle(.borderlessButton)
                 .menuIndicator(.hidden)
                 .fixedSize()
-                .help("More Ways to Add Snippets")
+                .help("More Ways to Add Quills")
             }
         }
     }
@@ -298,7 +300,7 @@ struct LibraryView: View {
             .tag(SidebarItem.snippet(snippet.id))
             .draggable(SnippetDrag.payload(for: dragIDs(for: snippet))) {
                 let count = dragIDs(for: snippet).count
-                Label(count > 1 ? "\(count) Snippets" : (snippet.trigger.isEmpty ? "Snippet" : snippet.trigger), systemImage: "text.quote")
+                Label(count > 1 ? "\(count) Quills" : (snippet.trigger.isEmpty ? "Quill" : snippet.trigger), systemImage: "text.quote")
                     .padding(6)
                     .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 6))
             }
@@ -321,7 +323,7 @@ struct LibraryView: View {
             .id(id)
         } else if ids.count > 1 {
             ContentUnavailableView {
-                Label("\(ids.count) Snippets Selected", systemImage: "square.stack")
+                Label("\(ids.count) Quills Selected", systemImage: "square.stack")
             } description: {
                 Text("Turn them on or off, move them to a group, or right-click for more.")
             } actions: {
@@ -337,12 +339,15 @@ struct LibraryView: View {
                     }
                 }
                 .fixedSize()
-                Button("Delete \(ids.count) Snippets", role: .destructive) {
+                Button("Delete \(ids.count) Quills", role: .destructive) {
                     delete(ids)
                 }
             }
         } else if state.selection == [.history] {
             HistoryView()
+        } else if state.selection == [.settings] {
+            SettingsView()
+
         } else {
             OverviewView()
         }
@@ -466,8 +471,8 @@ private struct GroupHeader: View {
             }
             .buttonStyle(.plain)
             .fixedSize()
-            .help("New Snippet in \(group.name)")
-            .accessibilityLabel("New snippet in \(group.name)")
+            .help("New Quill in \(group.name)")
+            .accessibilityLabel("New quill in \(group.name)")
 
             Menu {
                 GroupActionsMenu(group: group)
@@ -497,7 +502,7 @@ private struct GroupHeader: View {
         // macOS reads a sidebar section header as one element, so its controls are offered as named actions.
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(group.name) group")
-        .accessibilityValue("\(count) \(count == 1 ? "snippet" : "snippets"), \(group.isEnabled ? "on" : "off"), \(group.isExpanded ? "expanded" : "collapsed")")
+        .accessibilityValue("\(count) \(count == 1 ? "quill" : "quills"), \(group.isEnabled ? "on" : "off"), \(group.isExpanded ? "expanded" : "collapsed")")
         .accessibilityAddTraits(.isHeader)
         .accessibilityIdentifier("group-header-\(group.name)")
         .accessibilityAction(named: group.isExpanded ? "Collapse" : "Expand") {
@@ -506,7 +511,7 @@ private struct GroupHeader: View {
         .accessibilityAction(named: group.isEnabled ? "Turn Off" : "Turn On") {
             state.store.updateGroup(group.id) { $0.isEnabled.toggle() }
         }
-        .accessibilityAction(named: "New Snippet") { state.newSnippet(in: group.id) }
+        .accessibilityAction(named: "New Quill") { state.newSnippet(in: group.id) }
         .accessibilityAction(named: "Rename") { state.renamingGroupID = group.id }
         .accessibilityAction(named: "Change Colour") { state.colorPickerGroupID = group.id }
     }
@@ -579,7 +584,7 @@ private struct SnippetRow: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 5) {
-                    Text(snippet.trigger.isEmpty ? "New Snippet" : snippet.trigger)
+                    Text(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
                         .font(.body.weight(.semibold))
                         .foregroundStyle(snippet.trigger.isEmpty ? .secondary : .primary)
                         .lineLimit(1)
@@ -675,7 +680,7 @@ private struct SidebarSummary: View {
                 .fixedSize()
                 .help("Sort By: \(sortOrder.title)")
 
-                Text("\(count) \(count == 1 ? "snippet" : "snippets")")
+                Text("\(count) \(count == 1 ? "quill" : "quills")")
                 Spacer()
                 Text("\(keysSaved.formatted()) keys saved")
             }
@@ -702,7 +707,7 @@ private struct AccessCallout: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text("Quill Is Off")
                     .font(.headline)
-                Text("Allow Accessibility access so Quill can expand your snippets.")
+                Text("Allow Accessibility access so Quill can expand your quills.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
                     .lineLimit(3)

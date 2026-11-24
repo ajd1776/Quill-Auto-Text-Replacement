@@ -30,7 +30,7 @@ struct HistoryView: View {
                 }
             } else if state.history.entries.isEmpty {
                 ContentUnavailableView("No Expansions Yet", systemImage: "clock.arrow.circlepath",
-                                       description: Text("Each snippet you expand appears here, newest first."))
+                                       description: Text("Each quill you expand appears here, newest first."))
             } else {
                 VStack(spacing: 0) {
                     summaryBar(entries)
@@ -78,7 +78,7 @@ struct HistoryView: View {
             Button("Clear History", role: .destructive) { state.history.clear() }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes the list only. Your snippets and usage counts stay.")
+            Text("This removes the list only. Your quills and usage counts stay.")
         }
     }
 
@@ -94,7 +94,7 @@ struct HistoryView: View {
                 FilterChip(title: appName(for: bundleID), symbol: "app") { filter.bundleID = nil }
             }
             if let id = filter.snippetID {
-                FilterChip(title: state.store.snippet(id)?.trigger ?? "Snippet", symbol: "text.quote") { filter.snippetID = nil }
+                FilterChip(title: state.store.snippet(id)?.trigger ?? "Quill", symbol: "text.quote") { filter.snippetID = nil }
             }
             Text("\(entries.count) \(entries.count == 1 ? "expansion" : "expansions") · \(apps) \(apps == 1 ? "app" : "apps")")
                 .font(.callout)
@@ -119,11 +119,11 @@ struct HistoryView: View {
                     Text("\(app.name) (\(app.uses))").tag(Optional(app.bundleID ?? app.name))
                 }
             }
-            Picker("Snippet", selection: $filter.snippetID) {
-                Text("All Snippets").tag(Snippet.ID?.none)
+            Picker("Quill", selection: $filter.snippetID) {
+                Text("All Quills").tag(Snippet.ID?.none)
                 Divider()
                 ForEach(snippetIDs, id: \.self) { id in
-                    Text(state.store.snippet(id)?.trigger ?? "Deleted Snippet").tag(Optional(id))
+                    Text(state.store.snippet(id)?.trigger ?? "Deleted Quill").tag(Optional(id))
                 }
             }
             if filter.isActive {
@@ -134,7 +134,7 @@ struct HistoryView: View {
             Label("Filter", systemImage: filter.bundleID != nil || filter.snippetID != nil
                   ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
         }
-        .help("Filter by App or Snippet")
+        .help("Filter by App or Quill")
         .accessibilityIdentifier("history-filter")
     }
 
@@ -155,7 +155,7 @@ struct HistoryView: View {
     private func menu(for entry: HistoryEntry) -> some View {
         Button("Copy Text", systemImage: "doc.on.doc") { copy(entry) }
         if state.store.snippet(entry.snippetID) != nil {
-            Button("Show Snippet", systemImage: "arrow.right.circle") {
+            Button("Show Quill", systemImage: "arrow.right.circle") {
                 state.page = .snippets
                 state.selection = [.snippet(entry.snippetID)]
             }

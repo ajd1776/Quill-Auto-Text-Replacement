@@ -5,6 +5,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     case general, suggestions, effects, shortcuts, backup, about
     var id: String { rawValue }
     var title: String { rawValue.capitalized }
+    /// The tabs along the top of Settings: five at most, so About lives inside General.
+    static let tabs: [SettingsPane] = [.general, .suggestions, .effects, .shortcuts, .backup]
     var symbol: String {
         switch self {
         case .general: "gearshape.fill"
@@ -27,35 +29,78 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     }
 }
 
-/// Quill Settings: a toolbar of panes, reopening on the last one used.
+/// Quill Settings: one page in the main window, with an iPad-style floating tab bar
+/// along the top. Five tabs at most; About sits at the bottom of General.
 struct SettingsView: View {
-    @Environment(AppState.self) private var state
-    @AppStorage("settingsPane") private var pane: SettingsPane = .general
+    @AppStorage("settingsPane") private var stored: SettingsPane = .general
+
+    private var pane: SettingsPane { stored == .about ? .general : stored }
 
     var body: some View {
-        TabView(selection: $pane) {
-            GeneralSettingsPane()
-                .tabItem { Label("General", systemImage: "gearshape") }
-                .tag(SettingsPane.general)
-            SuggestionSettingsPane()
-                .tabItem { Label("Suggestions", systemImage: "text.bubble") }
-                .tag(SettingsPane.suggestions)
-            EffectsSettingsPane()
-                .tabItem { Label("Effects", systemImage: "sparkles") }
-                .tag(SettingsPane.effects)
-            ShortcutSettingsPane()
-                .tabItem { Label("Shortcuts", systemImage: "command") }
-                .tag(SettingsPane.shortcuts)
-            BackupSettingsPane()
-                .tabItem { Label("Backup", systemImage: "externaldrive") }
-                .tag(SettingsPane.backup)
-            AboutSettingsPane()
-                .tabItem { Label("About", systemImage: "info.circle") }
-                .tag(SettingsPane.about)
+        ScrollView {
+            VStack(spacing: 0) {
+                switch pane {
+                case .general, .about:
+                    GeneralSettingsPane()
+                    AboutSettingsPane()
+                case .suggestions: SuggestionSettingsPane()
+                case .effects: EffectsSettingsPane()
+                case .shortcuts: ShortcutSettingsPane()
+                case .backup: BackupSettingsPane()
+                }
+            }
+            .frame(maxWidth: 620)
+            .frame(maxWidth: .infinity)
+            .padding(.top, 64)
+            .padding(.bottom, 12)
         }
-        .frame(width: 580)
-        .onAppear { state.windowAppeared("settings") }
-        .onDisappear { state.windowDisappeared("settings") }
+        .overlay(alignment: .top) {
+            SettingsTabBar(selection: $stored, current: pane)
+                .padding(.top, 12)
+        }
+        .navigationTitle("Settings")
+    }
+}
+
+/// A floating capsule of text tabs, like the tab bar at the top of iPad apps.
+/// The selected tab sits in a tinted pill that slides between tabs.
+private struct SettingsTabBar: View {
+    @Binding var selection: SettingsPane
+    let current: SettingsPane
+    @Namespace private var pill
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 2) {
+            ForEach(SettingsPane.tabs) { tab in
+                let isSelected = tab == current
+                Button {
+                    withAnimation(reduceMotion ? nil : .snappy(duration: 0.25)) { selection = tab }
+                } label: {
+                    Text(tab.title)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                        .padding(.horizontal, 14)
+                        .frame(height: 28)
+                        .background {
+                            if isSelected {
+                                Capsule()
+                                    .fill(Color.accentColor.opacity(0.16))
+                                    .matchedGeometryEffect(id: "pill", in: pill)
+                            }
+                        }
+                        .contentShape(Capsule())
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+                .accessibilityIdentifier("settings-tab-\(tab.rawValue)")
+            }
+        }
+        .padding(4)
+        .background(.bar, in: Capsule())
+        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Settings tabs")
     }
 }
 
@@ -120,7 +165,7 @@ struct GeneralSettingsPane: View {
             }
 
             Section {
-                Toggle("Add a space after a snippet", isOn: Binding(
+                Toggle("Add a space after a quill", isOn: Binding(
                     get: { state.addsSpaceAfterSnippet },
                     set: { state.addsSpaceAfterSnippet = $0 }
                 ))
@@ -129,7 +174,7 @@ struct GeneralSettingsPane: View {
             } footer: {
                 FooterText(state.addsSpaceAfterSnippet
                     ? "The space you type to expand a shortcut stays after the text."
-                    : "The space you type to expand a shortcut is removed, so the text ends right after the snippet. Return, Tab and punctuation still go through.")
+                    : "The space you type to expand a shortcut is removed, so the text ends right after the quill. Return, Tab and punctuation still go through.")
             }
 
             Section {
@@ -195,7 +240,7 @@ struct GeneralSettingsPane: View {
         panel.directoryURL = URL(fileURLWithPath: "/Applications")
         panel.allowsMultipleSelection = true
         panel.prompt = "Pause Quill"
-        panel.message = "Choose apps where Quill shouldn't expand snippets."
+        panel.message = "Choose apps where Quill shouldn't expand quills."
         guard panel.runModal() == .OK else { return }
         for url in panel.urls {
             if let bundleID = Bundle(url: url)?.bundleIdentifier { state.setExcluded(bundleID, true) }
@@ -331,7 +376,7 @@ struct EffectsSettingsPane: View {
             } header: {
                 Text("Default Animation")
             } footer: {
-                FooterText(state.defaultAnimation.explanation + " Any snippet can use a different style, from its editor or right-click menu.")
+                FooterText(state.defaultAnimation.explanation + " Any quill can use a different style, from its editor or right-click menu.")
             }
 
             if systemReduceMotion {
@@ -373,7 +418,7 @@ struct EffectsSettingsPane: View {
             } header: {
                 Text("Sound")
             } footer: {
-                FooterText("Plays each time a snippet expands.")
+                FooterText("Plays each time a quill expands.")
             }
         }
         .settingsPaneStyle()
@@ -430,8 +475,8 @@ struct ShortcutSettingsPane: View {
                 LabeledContent("Turn Quill on or off") {
                     HotkeyRecorder(hotkey: $state.toggleHotkey, label: "Turn Quill on or off")
                 }
-                LabeledContent("Search snippets") {
-                    HotkeyRecorder(hotkey: $state.searchHotkey, label: "Search snippets")
+                LabeledContent("Search quills") {
+                    HotkeyRecorder(hotkey: $state.searchHotkey, label: "Search quills")
                 }
             } footer: {
                 if state.hotkeyConflicts.isEmpty {
@@ -450,7 +495,7 @@ struct ShortcutSettingsPane: View {
             }
 
             Section("In the Library") {
-                LabeledContent("New snippet / group") { Text("⌘N / ⇧⌘N").foregroundStyle(.secondary) }
+                LabeledContent("New quill / group") { Text("⌘N / ⇧⌘N").foregroundStyle(.secondary) }
                 LabeledContent("Duplicate") { Text("⌘D").foregroundStyle(.secondary) }
                 LabeledContent("Overview") { Text("⌘0").foregroundStyle(.secondary) }
                 LabeledContent("Turn Quill on or off") { Text("⇧⌘P").foregroundStyle(.secondary) }
@@ -476,15 +521,15 @@ struct BackupSettingsPane: View {
                     Button("Show in Finder") { state.showBackups() }
                 }
             } footer: {
-                FooterText("Quill saves a copy of your snippets once a day and keeps the last seven.")
+                FooterText("Quill saves a copy of your quills once a day and keeps the last seven.")
             }
 
             Section {
                 LabeledContent("Export") {
-                    Button("Export Snippets…") { state.exportLibrary() }
+                    Button("Export Quills…") { state.exportLibrary() }
                 }
                 LabeledContent("Import") {
-                    Button("Import Snippets…", action: importFile)
+                    Button("Import Quills…", action: importFile)
                 }
                 LabeledContent("macOS Text Replacements") {
                     Button("Import…") {
@@ -495,11 +540,11 @@ struct BackupSettingsPane: View {
             } header: {
                 Text("Move Between Macs")
             } footer: {
-                FooterText("Exports include every snippet, group and usage count. Importing skips shortcuts Quill already has.")
+                FooterText("Exports include every quill, group and usage count. Importing skips shortcuts Quill already has.")
             }
 
             Section {
-                LabeledContent("Snippets file") {
+                LabeledContent("Library file") {
                     Button("Show in Finder") {
                         state.store.save()
                         NSWorkspace.shared.activateFileViewerSelecting([SnippetStore.fileURL])
@@ -554,10 +599,10 @@ struct AboutSettingsPane: View {
             }
 
             Section("Library") {
-                LabeledContent("Snippets", value: state.store.snippets.count.formatted())
+                LabeledContent("Quills", value: state.store.snippets.count.formatted())
                 LabeledContent("Groups", value: state.store.groups.count.formatted())
                 LabeledContent("Keys saved", value: state.store.totalKeysSaved.formatted())
-                LabeledContent("Snippets file") {
+                LabeledContent("Library file") {
                     Button("Show in Finder") {
                         NSWorkspace.shared.activateFileViewerSelecting([SnippetStore.fileURL])
                     }
@@ -579,7 +624,7 @@ struct AboutSettingsPane: View {
             }
 
             Section {
-                Text("MIT licence. Your snippets and history stay on this Mac; the only network request is the daily update check against GitHub Releases.")
+                Text("MIT licence. Your quills and history stay on this Mac; the only network request is the daily update check against GitHub Releases.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
