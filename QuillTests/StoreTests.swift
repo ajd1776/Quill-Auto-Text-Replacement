@@ -182,30 +182,26 @@ final class ScopeTests: XCTestCase {
         XCTAssertEqual(state.title(for: .all), "All Quills")
     }
 
-    func testSidebarSelectionDrivesThePage() {
+    func testTabBarPagesAndSelection() {
         let state = AppState.shared
-        state.selection = [.history]
-        XCTAssertEqual(state.page, .history)
-        state.selection = [.overview]
-        XCTAssertEqual(state.page, .stats)
-        if let snippet = state.store.snippets.first {
-            state.selection = [.snippet(snippet.id)]
-            XCTAssertEqual(state.page, .snippets)
-            XCTAssertEqual(state.selectedSnippetIDs, [snippet.id])
-        }
-        state.page = .history
-        XCTAssertEqual(state.selection, [.history], "Setting the page selects it in the sidebar")
         state.page = .stats
-        XCTAssertEqual(state.selection, [.overview])
+        XCTAssertEqual(state.page, .stats)
         state.page = .settings
-        XCTAssertEqual(state.selection, [.settings], "Settings is a page in the main window")
-        XCTAssertEqual(state.page, .settings)
+        XCTAssertEqual(state.page, .settings, "Settings is a page in the main window")
         state.showSettings(.backup)
         XCTAssertEqual(UserDefaults.standard.string(forKey: "settingsPane"), "backup", "Opening a pane remembers it")
+        if let snippet = state.store.snippets.first {
+            state.page = .history
+            state.selection = [.snippet(snippet.id)]
+            XCTAssertEqual(state.page, .snippets, "Choosing a quill from another page shows it on Quills")
+            XCTAssertEqual(state.selectedSnippetIDs, [snippet.id])
+        }
+        state.open(link: URL(string: "quill://settings/effects")!)
+        XCTAssertEqual(state.page, .settings)
+        XCTAssertEqual(UserDefaults.standard.string(forKey: "settingsPane"), "effects")
+        state.open(link: URL(string: "quill://stats")!)
+        XCTAssertEqual(state.page, .stats)
         state.page = .snippets
-        XCTAssertTrue(state.selection.isEmpty, "Leaving Settings clears the selection")
-        state.page = .snippets
-        XCTAssertTrue(state.selection.isEmpty)
     }
 }
 

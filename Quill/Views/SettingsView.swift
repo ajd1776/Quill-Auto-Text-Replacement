@@ -29,8 +29,8 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     }
 }
 
-/// Quill Settings: one page in the main window, with an floating tab bar
-/// along the bottom. Five tabs at most; About sits at the bottom of General.
+/// Quill Settings: one page in the main window, with an row of tabs
+/// along the top. Five tabs at most; About sits at the bottom of General.
 struct SettingsView: View {
     @AppStorage("settingsPane") private var stored: SettingsPane = .general
 
@@ -51,51 +51,46 @@ struct SettingsView: View {
             }
             .frame(maxWidth: 620)
             .frame(maxWidth: .infinity)
-            .padding(.top, 12)
-            .padding(.bottom, 96)
+            .padding(.top, 60)
+            .padding(.bottom, 12)
         }
-        .overlay(alignment: .bottom) {
+        .overlay(alignment: .top) {
             SettingsTabBar(selection: $stored, current: pane)
-                .padding(.bottom, 16)
+                .padding(.top, 12)
         }
         .navigationTitle("Settings")
     }
 }
 
-/// A floating tab bar like the one on iPhone: a symbol over a label for each tab,
-/// the selected one in the accent colour, on a rounded panel floating at the bottom of the page.
+/// The Settings panes as a compact row of text tabs at the top of the page, the
+/// current one in a tinted capsule. The main tab bar sits at the bottom of the window.
 private struct SettingsTabBar: View {
     @Binding var selection: SettingsPane
     let current: SettingsPane
 
     var body: some View {
-        HStack(spacing: 4) {
+        HStack(spacing: 2) {
             ForEach(SettingsPane.tabs) { tab in
                 let isSelected = tab == current
                 Button {
                     selection = tab
                 } label: {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.symbol)
-                            .font(.system(size: 20, weight: .medium))
-                            .frame(height: 24)
-                        Text(tab.title)
-                            .font(.system(size: 11, weight: .medium))
-                    }
-                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
-                    .frame(width: 92, height: 52)
-                    .contentShape(Rectangle())
+                    Text(tab.title)
+                        .font(.system(size: 13, weight: isSelected ? .semibold : .medium))
+                        .foregroundStyle(isSelected ? Color.accentColor : Color.primary)
+                        .padding(.horizontal, 14)
+                        .frame(height: 28)
+                        .background(isSelected ? Color.accentColor.opacity(0.16) : .clear, in: Capsule())
+                        .contentShape(Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(tab.title)
                 .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
                 .accessibilityIdentifier("settings-tab-\(tab.rawValue)")
             }
         }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 6)
-        .background(.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .padding(4)
+        .background(.bar, in: Capsule())
+        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Settings tabs")
     }

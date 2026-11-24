@@ -203,6 +203,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    /// quill://settings (or settings/effects), quill://stats, quill://history, quill://library
+    /// and quill://firing-range open that page.
+    func application(_ application: NSApplication, open urls: [URL]) {
+        MainActor.assumeIsolated {
+            for url in urls where url.scheme == "quill" { AppState.shared.open(link: url) }
+        }
+    }
+
     /// Clicking the Dock icon or opening Quill again brings back the library.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
         if !flag {

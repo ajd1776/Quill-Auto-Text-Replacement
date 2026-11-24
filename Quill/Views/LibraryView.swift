@@ -1,8 +1,8 @@
 import SwiftUI
 import UniformTypeIdentifiers
 
-/// The main window: Overview and snippets (loose and in groups) in the sidebar,
-/// the dashboard or the selected snippet's editor beside them.
+/// The main window: a floating tab bar at the bottom switches between Quills (the
+/// sidebar of groups and the editor), Stats, History and Settings, with New in the middle.
 struct LibraryView: View {
     @Environment(AppState.self) private var state
     @Environment(\.undoManager) private var undoManager
@@ -28,15 +28,30 @@ struct LibraryView: View {
     var body: some View {
         @Bindable var state = state
 
-        NavigationSplitView {
-            sidebar
-                .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 460)
-        } detail: {
-            detail
+        VStack(spacing: 0) {
+            Group {
+            switch state.page {
+            case .snippets:
+                NavigationSplitView {
+                    sidebar
+                        .navigationSplitViewColumnWidth(min: 300, ideal: 330, max: 460)
+                } detail: {
+                    detail
+                }
+                .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
+            case .stats:
+                NavigationStack { OverviewView() }
+            case .history:
+                NavigationStack { HistoryView() }
+            case .settings:
+                NavigationStack { SettingsView() }
+            }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            MainTabBar()
         }
         // Without a minimum, macOS can restore the window at a uselessly small size.
-        .frame(minWidth: 900, minHeight: 600)
-        .searchable(text: $searchText, placement: .sidebar, prompt: "Search")
+        .frame(minWidth: 900, minHeight: 640)
         .sheet(isPresented: Binding(
             get: { state.updates.isShowingDetails && state.updates.availableUpdate != nil },
             set: { state.updates.isShowingDetails = $0 }
@@ -151,15 +166,6 @@ struct LibraryView: View {
                     .listRowSeparator(.hidden)
             }
 
-            if !isSearching {
-                SidebarLink(title: "Stats", symbol: "chart.bar.xaxis", color: .purple)
-                    .tag(SidebarItem.overview)
-                SidebarLink(title: "History", symbol: "clock.arrow.circlepath", color: .teal,
-                            badge: state.history.entries.isEmpty ? nil : "\(state.history.entries.count)")
-                    .tag(SidebarItem.history)
-                SidebarLink(title: "Settings", symbol: "gearshape.fill", color: .gray)
-                    .tag(SidebarItem.settings)
-            }
 
             // Collapsing is done with our own larger arrow, so sections are plain and rows are skipped when collapsed.
             if !loose.isEmpty || store.groups.isEmpty {
@@ -343,13 +349,9 @@ struct LibraryView: View {
                     delete(ids)
                 }
             }
-        } else if state.selection == [.history] {
-            HistoryView()
-        } else if state.selection == [.settings] {
-            SettingsView()
-
         } else {
-            OverviewView()
+            ContentUnavailableView("Select a Quill", systemImage: "pencil.line",
+                                   description: Text("Choose a quill in the sidebar to edit it."))
         }
     }
 
@@ -388,7 +390,6 @@ struct LibraryView: View {
     private func delete(_ ids: Set<Snippet.ID>) {
         store.delete(ids, undoManager: undoManager)
         state.selection.subtract(ids.map { .snippet($0) })
-        if state.selection.isEmpty { state.selection = [.overview] }
     }
 }
 
@@ -406,6 +407,96 @@ private struct HeaderSymbol: View {
             .foregroundStyle(Color(nsColor: .labelColor))
             .frame(width: 26, height: 24)
             .contentShape(Rectangle())
+    }
+}
+
+/// The main window's floating tab bar, like the one on iPhone: a symbol over a label
+/// for each page, the current one in the accent colour, and New as a filled circle in the middle.
+private struct MainTabBar: View {
+    @Environment(AppState.self) private var state
+
+    private struct Tab: Identifiable {
+        let page: AppPage
+        let symbol: String
+        var id: AppPage { page }
+    }
+
+    private let leading = [Tab(page: .snippets, symbol: "rectangle.stack.fill"), Tab(page: .stats, symbol: "chart.bar.fill")]
+    private let trailing = [Tab(page: .history, symbol: "clock.fill"), Tab(page: .settings, symbol: "gearshape.fill")]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(leading) { tab($0) }
+            newButton
+            ForEach(trailing) { tab($0) }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 6)
+        .background(.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .padding(.top, 8)
+        .padding(.bottom, 12)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Pages")
+    }
+
+    private func tab(_ tab: Tab) -> some View {
+        let isSelected = state.page == tab.page
+        return Button {
+            state.page = tab.page
+        } label: {
+            TabLabel(symbol: tab.symbol, title: tab.page.title)
+                .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .accessibilityLabel(tab.page.title)
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
+        .accessibilityIdentifier("tab-\(tab.page.rawValue)")
+    }
+
+    private var newButton: some View {
+        Button {
+            state.page = .snippets
+            state.newSnippet()
+        } label: {
+            VStack(spacing: 4) {
+                Image(systemName: "plus")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 30, height: 30)
+                    .background(Color.accentColor, in: Circle())
+                Text("New")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            .frame(width: 92, height: 52)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .help("New Quill (⌘N)")
+        .accessibilityLabel("New Quill")
+        .accessibilityIdentifier("tab-new")
+    }
+}
+
+/// A symbol over a short label, the shape of every tab in Quill's tab bars.
+struct TabLabel: View {
+    let symbol: String
+    let title: String
+
+    var body: some View {
+        VStack(spacing: 4) {
+            Image(systemName: symbol)
+                .font(.system(size: 20, weight: .medium))
+                .frame(height: 24)
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+        }
+        .frame(width: 92, height: 52)
+        .contentShape(Rectangle())
     }
 }
 

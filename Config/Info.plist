@@ -6,6 +6,17 @@
 	<false/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>Quill Page Link</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>quill</string>
+			</array>
+		</dict>
+	</array>
 	<key>QuillUpdateRepository</key>
 	<string>ajd1776/Quill-Auto-Text-Replacement</string>
 </dict>

@@ -6,9 +6,6 @@ import UniformTypeIdentifiers
 
 /// What's selected in the library sidebar.
 enum SidebarItem: Hashable {
-    case overview
-    case history
-    case settings
     case snippet(Snippet.ID)
 
     var snippetID: Snippet.ID? {
@@ -194,26 +191,15 @@ final class AppState {
     var scope: SnippetScope = .all
 
     /// What's selected in the sidebar: Stats, History, or one or more snippets.
-    var selection: Set<SidebarItem> = [.overview]
+    var selection: Set<SidebarItem> = [] {
+        // Choosing a quill from Stats, History or the palette shows it on the Quills page.
+        didSet { if !selection.isEmpty, page != .snippets { page = .snippets } }
+    }
 
     /// Which area the window shows, worked out from the sidebar selection. Setting it selects that area,
     /// so menus, ⌘K and the menu bar panel can switch areas; Settings opens its own window.
-    var page: AppPage {
-        get {
-            if selection.contains(.history) { return .history }
-            if selection.contains(.overview) { return .stats }
-            if selection.contains(.settings) { return .settings }
-            return .snippets
-        }
-        set {
-            switch newValue {
-            case .stats: selection = [.overview]
-            case .history: selection = [.history]
-            case .snippets: if selection.contains(where: { $0.snippetID == nil }) { selection = [] }
-            case .settings: showSettings()
-            }
-        }
-    }
+    /// The page the main window's tab bar shows.
+    var page: AppPage = .snippets
 
     /// The snippets a scope covers, before search and sorting.
     func snippets(in scope: SnippetScope) -> [Snippet] {
@@ -300,7 +286,22 @@ final class AppState {
         if let pane { UserDefaults.standard.set(pane.rawValue, forKey: "settingsPane") }
         NSApp.activate()
         openLibraryAction?()
-        selection = [.settings]
+        page = .settings
+    }
+
+    /// Opens the page a quill:// link names, such as quill://settings/effects.
+    func open(link url: URL) {
+        let page = url.host()?.lowercased() ?? ""
+        let detail = url.pathComponents.dropFirst().first?.lowercased()
+        switch page {
+        case "settings": showSettings(detail.flatMap(SettingsPane.init(rawValue:)))
+        case "firing-range", "range": showFiringRange()
+        case "stats", "history", "library", "quills":
+            NSApp.activate()
+            openLibraryAction?()
+            self.page = page == "stats" ? .stats : page == "history" ? .history : .snippets
+        default: break
+        }
     }
 
     func showFiringRange() {
