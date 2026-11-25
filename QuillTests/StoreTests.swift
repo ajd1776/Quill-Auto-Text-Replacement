@@ -203,6 +203,30 @@ final class AppStateTests: XCTestCase {
         XCTAssertEqual(legacy.notes, "", "Files without notes still load")
     }
 
+    func testNewQuillPageCreatesOnlyWhenReady() {
+        let state = AppState.shared
+        state.selection = []
+        let before = state.store.snippets.count
+        state.draft = .blank()
+        XCTAssertFalse(state.createDraft(), "An empty draft can't be created")
+        state.draft.trigger = "zzdraft"
+        XCTAssertNotNil(state.store.problem(withNew: state.draft), "It still needs its text")
+        state.draft.expansion = "Drafted text"
+        XCTAssertEqual(state.store.snippets.count, before, "Typing on the page saves nothing")
+        let id = state.draft.id
+        XCTAssertTrue(state.createDraft())
+        XCTAssertEqual(state.store.snippets.count, before + 1)
+        XCTAssertEqual(state.selectedSnippetIDs, [id], "The new quill opens")
+        XCTAssertTrue(state.draft.trigger.isEmpty, "The page is ready for the next one")
+        XCTAssertNotEqual(state.draft.id, id)
+        state.draft.trigger = "zzdraft"
+        state.draft.expansion = "Again"
+        XCTAssertEqual(state.store.problem(withNew: state.draft), "Another quill already uses this shortcut.")
+        state.draft = .blank()
+        state.store.delete([id], undoManager: nil)
+        state.selection = []
+    }
+
     func testTabBarPagesAndSelection() {
         let state = AppState.shared
         state.page = .stats

@@ -341,8 +341,11 @@ struct LibraryView: View {
                 }
             }
         } else {
-            ContentUnavailableView("Select a Quill", systemImage: "pencil.line",
-                                   description: Text("Choose a quill in the sidebar to edit it."))
+            @Bindable var state = state
+            SnippetDetailView(snippet: $state.draft, isDraft: true) {
+                state.draft = Snippet.blank(in: state.draft.groupID)
+            }
+            .id(state.draft.id)
         }
     }
 

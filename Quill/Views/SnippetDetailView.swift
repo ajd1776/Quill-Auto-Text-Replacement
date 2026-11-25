@@ -5,6 +5,9 @@ import UniformTypeIdentifiers
 /// chips, and the snippet's settings at the bottom. Changes save as you type.
 struct SnippetDetailView: View {
     @Binding var snippet: Snippet
+    /// The new-quill page: nothing is saved until Create Quill.
+    var isDraft = false
+    /// Deletes the quill, or on the new-quill page clears it.
     let onDelete: () -> Void
 
     @Environment(AppState.self) private var state
@@ -29,17 +32,19 @@ struct SnippetDetailView: View {
             footer
         }
         .background(Surface.editor)
-        .navigationTitle(snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
+        .navigationTitle(isDraft || snippet.trigger.isEmpty ? "New Quill" : snippet.trigger)
         .toolbar {
-            ToolbarItemGroup(placement: .primaryAction) {
-                Button("Copy Text", systemImage: "doc.on.doc") {
-                    state.copyExpansion(snippet.id)
-                }
-                .help("Copy Text")
-                .disabled(snippet.expansion.isEmpty)
+            if !isDraft {
+                ToolbarItemGroup(placement: .primaryAction) {
+                    Button("Copy Text", systemImage: "doc.on.doc") {
+                        state.copyExpansion(snippet.id)
+                    }
+                    .help("Copy Text")
+                    .disabled(snippet.expansion.isEmpty)
 
-                Button("Delete Quill", systemImage: "trash", action: onDelete)
-                    .help("Delete Quill")
+                    Button("Delete Quill", systemImage: "trash", action: onDelete)
+                        .help("Delete Quill")
+                }
             }
         }
         .onAppear {
@@ -50,40 +55,49 @@ struct SnippetDetailView: View {
     // MARK: Header
 
     private var header: some View {
-        let problem = state.store.problem(with: snippet)
+        let problem = isDraft ? state.store.problem(withNew: snippet) : state.store.problem(with: snippet)
 
         return HStack(alignment: .center, spacing: 16) {
             Button {
-                state.appearanceTarget = .snippet(snippet.id)
+                if !isDraft { state.appearanceTarget = .snippet(snippet.id) }
             } label: {
-                SnippetIcon(symbol: snippet.symbol ?? group?.symbol, color: tint, size: 52)
+                SnippetIcon(symbol: snippet.symbol ?? group?.symbol ?? (isDraft ? "plus" : nil), color: tint, size: 52)
                     .overlay(alignment: .bottomTrailing) {
-                        Image(systemName: "pencil.circle.fill")
-                            .font(.system(size: 16))
-                            .foregroundStyle(.white, tint)
-                            .offset(x: 4, y: 4)
+                        if !isDraft {
+                            Image(systemName: "pencil.circle.fill")
+                                .font(.system(size: 16))
+                                .foregroundStyle(.white, tint)
+                                .offset(x: 4, y: 4)
+                        }
                     }
             }
             .buttonStyle(.plain)
-            .help("Change Icon and Colour")
+            .disabled(isDraft)
+            .help(isDraft ? "Choose an icon and colour after creating the quill" : "Change Icon and Colour")
             .accessibilityLabel("Change icon and colour")
 
             VStack(alignment: .leading, spacing: 5) {
                 HStack(spacing: 10) {
-                    StatusDot(isOn: state.store.isActive(snippet), help: statusHelp)
-                    TextField("Shortcut", text: $snippet.trigger, prompt: Text("Shortcut"))
+                    if !isDraft {
+                        StatusDot(isOn: state.store.isActive(snippet), help: statusHelp)
+                    }
+                    TextField("Shortcut", text: $snippet.trigger, prompt: Text(isDraft ? "New shortcut" : "Shortcut"))
                         .textFieldStyle(.plain)
                         .font(.system(size: 28, weight: .bold, design: .monospaced))
                         .focused($isTriggerFocused)
                         .autocorrectionDisabled()
                         .accessibilityLabel("Shortcut")
+                        .onSubmit { if isDraft { state.createDraft() } }
                 }
 
                 if let problem {
-                    Label(problem, systemImage: "exclamationmark.triangle.fill")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.orange)
+                    // On the new-quill page the first two are steps, not warnings.
+                    let isStep = isDraft && (snippet.trigger.isEmpty || snippet.expansion.isEmpty)
+                    Label(problem, systemImage: isStep ? "info.circle" : "exclamationmark.triangle.fill")
+                        .font(.callout.weight(isStep ? .regular : .semibold))
+                        .foregroundStyle(isStep ? AnyShapeStyle(.secondary) : AnyShapeStyle(.orange))
                         .lineLimit(1)
+                        .accessibilityIdentifier("quill-problem")
                 }
 
                 notesField
@@ -92,11 +106,28 @@ struct SnippetDetailView: View {
 
             Spacer(minLength: 0)
 
-            Toggle("Quill on", isOn: $snippet.isEnabled)
-                .toggleStyle(.switch)
-                .labelsHidden()
-                .help(snippet.isEnabled ? "Turn Off" : "Turn On")
-                .accessibilityLabel("Quill on")
+            if isDraft {
+                HStack(spacing: 8) {
+                    if !snippet.trigger.isEmpty || !snippet.expansion.isEmpty || !snippet.notes.isEmpty {
+                        Button("Clear", action: onDelete)
+                            .controlSize(.large)
+                            .help("Start again")
+                    }
+                    Button("Create Quill") { state.createDraft() }
+                        .primaryActionStyle()
+                        .controlSize(.large)
+                        .keyboardShortcut(.return, modifiers: .command)
+                        .disabled(problem != nil)
+                        .help(problem ?? "Create this quill (⌘Return)")
+                        .accessibilityIdentifier("create-quill")
+                }
+            } else {
+                Toggle("Quill on", isOn: $snippet.isEnabled)
+                    .toggleStyle(.switch)
+                    .labelsHidden()
+                    .help(snippet.isEnabled ? "Turn Off" : "Turn On")
+                    .accessibilityLabel("Quill on")
+            }
         }
         .padding(.horizontal, inset)
         .padding(.top, 22)
@@ -153,7 +184,7 @@ struct SnippetDetailView: View {
 
                 Spacer()
 
-                Text(countText + " · " + usageText)
+                Text(isDraft ? countText : countText + " · " + usageText)
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.tertiary)

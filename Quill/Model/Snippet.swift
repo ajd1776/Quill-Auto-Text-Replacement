@@ -161,6 +161,13 @@ enum SnippetSortOrder: String, CaseIterable, Identifiable {
 }
 
 struct Snippet: Identifiable, Codable, Hashable {
+    /// An empty quill for the new-quill page.
+    static func blank(in groupID: SnippetGroup.ID? = nil) -> Snippet {
+        var snippet = Snippet(trigger: "", expansion: "")
+        snippet.groupID = groupID
+        return snippet
+    }
+
     var id = UUID()
     var trigger: String
     var expansion: String

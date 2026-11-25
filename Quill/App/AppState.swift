@@ -214,6 +214,23 @@ final class AppState {
         didSet { if page != .snippets, !selection.isEmpty { selection = [] } }
     }
 
+    /// The quill being written on the new-quill page, shown when no quill is selected. It joins the
+    /// store only when created, so leaving the page never leaves an empty quill behind.
+    var draft = Snippet(trigger: "", expansion: "")
+
+    /// Saves the draft as a real quill and opens it.
+    @discardableResult
+    func createDraft() -> Bool {
+        var quill = draft
+        quill.trigger = quill.trigger.trimmingCharacters(in: .whitespaces)
+        guard store.problem(withNew: quill) == nil else { return false }
+        quill.created = Date()
+        store.add(quill)
+        draft = Snippet.blank(in: draft.groupID)
+        selection = [.snippet(quill.id)]
+        return true
+    }
+
     var importSession: ImportSession?
     var alertMessage: (title: String, message: String)?
     var isShowingFileImporter = false

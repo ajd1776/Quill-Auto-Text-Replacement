@@ -180,6 +180,10 @@ final class SnippetStore {
         return snippet
     }
 
+    func add(_ snippet: Snippet) {
+        snippets.append(snippet)
+    }
+
     func add(contentsOf new: [Snippet]) {
         snippets.append(contentsOf: new)
     }
@@ -460,6 +464,14 @@ final class SnippetStore {
     }
 
     /// A short message describing why a snippet's shortcut won't work, or nil if it's fine.
+    /// What stops an unsaved quill from being created, like problem(with:) but counting every saved quill.
+    func problem(withNew snippet: Snippet) -> String? {
+        if !snippet.trigger.isEmpty, triggerCounts[snippet.trigger, default: 0] > 0 {
+            return "Another quill already uses this shortcut."
+        }
+        return problem(with: snippet)
+    }
+
     func problem(with snippet: Snippet) -> String? {
         if snippet.trigger.isEmpty { return "Enter a shortcut to use this quill." }
         if snippet.trigger.contains(where: \.isWhitespace) { return "Shortcuts can't contain spaces." }
