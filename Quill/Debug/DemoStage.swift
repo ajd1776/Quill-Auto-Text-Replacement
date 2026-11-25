@@ -83,13 +83,14 @@ final class DemoStage {
 
     private func effects() async throws {
         try await pause(0.3)
-        let lines: [(String, String, ReplacementAnimation)] = [
-            ("omw", "on my way", .cyber),
-            ("eml", "name@example.com", .confetti),
-            ("omw", "on my way", .sparkle),
+        let lines: [(String, String, [ReplacementAnimation])] = [
+            ("omw", "on my way", [.cyber]),
+            ("eml", "name@example.com", [.confetti]),
+            // Two effects combined, as Settings › Effects allows.
+            ("omw", "on my way", [.popBadge, .sparkle]),
         ]
         for (index, line) in lines.enumerated() {
-            try await typeTrigger(line.0, into: line.1, effect: line.2, bubble: false)
+            try await typeTrigger(line.0, into: line.1, effect: line.2[0], also: Array(line.2.dropFirst()), bubble: false)
             try await pause(0.7)
             if index < lines.count - 1 { try await type("\n") }
         }
@@ -133,7 +134,7 @@ final class DemoStage {
         }
     }
 
-    /// The library window: editor, switches, groups, Icon and Colour, then Stats and the Firing Range.
+    /// The library window: editor with notes, switches, groups, the Edit sheet, then Stats and the Firing Range.
     private func tour(openLibrary: @escaping () -> Void) {
         state.selection = []
         state.selection = []
@@ -154,8 +155,9 @@ final class DemoStage {
             @MainActor func select(_ trigger: String) {
                 if let id = snippet(trigger)?.id { state.selection = [.snippet(id)] }
             }
+            if let id = snippet("eml")?.id { state.store.update(id) { $0.notes = "Work email for forms and sign-ups" } }
             select("eml")
-            try await pause(1.0)
+            try await pause(1.2)
             // Switch a snippet off and on again, right in the row.
             if let id = snippet("omw")?.id {
                 withAnimation { state.store.setEnabled(id, false) }
@@ -169,11 +171,14 @@ final class DemoStage {
                 try await pause(0.7)
                 withAnimation(.snappy(duration: 0.2)) { state.store.updateGroup(shop.id) { $0.isExpanded = true } }
                 try await pause(0.5)
-                // Icon and Colour.
-                state.appearanceTarget = .group(shop.id)
-                try await pause(1.6)
-                state.appearanceTarget = nil
-                try await pause(0.5)
+                // The Edit sheet: shortcut, text, notes, group, colour and icon in one place.
+                if let thx = snippet("thx")?.id {
+                    state.store.update(thx) { $0.notes = "Order confirmation for shop customers" }
+                    state.appearanceTarget = .snippet(thx)
+                    try await pause(2.0)
+                    state.appearanceTarget = nil
+                    try await pause(0.5)
+                }
             }
             state.page = .stats
             try await pause(1.2)
@@ -272,7 +277,10 @@ final class DemoStage {
     }
 
     /// Types a shortcut and a space, then expands it like the engine does: the shortcut goes, the text arrives.
-    private func typeTrigger(_ trigger: String, into text: String, effect: ReplacementAnimation, bubble: Bool) async throws {
+    /// Types a shortcut and a space, then swaps in the text like the engine: the space stays only
+    /// when that setting is on. `also` plays more effects together with the first.
+    private func typeTrigger(_ trigger: String, into text: String, effect: ReplacementAnimation,
+                             also: [ReplacementAnimation] = [], bubble: Bool) async throws {
         let start = length
         for (index, character) in trigger.enumerated() {
             append(String(character))
@@ -285,8 +293,8 @@ final class DemoStage {
         append(" ")
         try await pause(0.06)
         SuggestionBubbleController.shared.hide()
-        replace(from: start, with: text + " ")
-        play(effect, trigger: trigger, inserted: text)
+        replace(from: start, with: text + (state.addsSpaceAfterSnippet ? " " : ""))
+        for style in [effect] + also { play(style, trigger: trigger, inserted: text) }
         try await pause(0.6)
     }
 

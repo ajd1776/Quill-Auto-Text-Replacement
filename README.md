@@ -11,7 +11,7 @@
 </div>
 
 <p align="center">
-  <img src="docs/media/hero.gif" width="820" alt="Typing in a draft: omw expands to on my way, and si opens the suggestion bubble to pick a signature">
+  <img src="docs/media/hero.gif" width="820" alt="Typing in a draft: omw expands to on my way with no trailing space, and si opens the suggestion bubble to pick a signature">
 </p>
 
 <p align="center"><a href="docs/media/demo.mp4"><b>▶ Watch the 30-second demo</b></a></p>
@@ -55,11 +55,11 @@ The most useful first:
 | --- | --- |
 | <img src="docs/media/bubble.gif" alt="Typing si shows sig and sigw in a bubble above the text; the arrow key picks sigw and Tab inserts the signature"> | <img src="docs/media/fillin.gif" alt="Typing thx opens a form for Name and Order, then inserts the finished message with confetti"> |
 
-<p align="center"><img src="docs/media/tour.gif" width="820" alt="The Quill window: selecting a quill, switching one off and on in its row, collapsing the Shop group, the Icon and Colour sheet, then Stats and the Firing Range from the tab bar"></p>
+<p align="center"><img src="docs/media/tour.gif" width="820" alt="The Quill window: selecting eml with its note under the title, switching a quill off and on in its row, collapsing the Shop group, the Edit sheet for thx with its text and notes, then Stats and the Firing Range from the tab bar"></p>
 
-| Menu bar panel | Effects |
+| Menu bar panel | Effects, combined |
 | --- | --- |
-| <img src="docs/media/panel.gif" width="320" alt="The menu bar panel: searching for sig, then filtering by the Shop group, with the tab bar and Quit along the bottom"> | <img src="docs/media/effects.gif" alt="Three expansions with the Cyber, Confetti and Sparkle effects"> |
+| <img src="docs/media/panel.gif" width="320" alt="The menu bar panel: searching for sig, then filtering by the Shop group, with the tab bar and Quit along the bottom"> | <img src="docs/media/effects.gif" alt="Three expansions: Cyber, then Confetti, then Pop Badge and Sparkle combined"> |
 
 ## Screenshots
 
