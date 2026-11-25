@@ -217,8 +217,8 @@ struct SnippetDetailView: View {
 
     /// The quill's options as one row of coloured pills, each a menu.
     private var optionPills: some View {
-        HStack(spacing: 6) {
-            OptionPill(title: group?.name ?? "No Group", symbol: "folder.fill", color: .purple, help: "Group") {
+        HStack(alignment: .bottom, spacing: 6) {
+            OptionPill(title: group?.name ?? "No Group", symbol: "folder.fill", color: .purple, help: "The group this quill belongs to") {
                 Picker("Group", selection: $snippet.groupID) {
                     Text("No Group").tag(SnippetGroup.ID?.none)
                     if !state.store.groups.isEmpty { Divider() }
@@ -227,15 +227,17 @@ struct SnippetDetailView: View {
                     }
                 }
             }
+            .pillCaption("Group")
 
-            OptionPill(title: snippet.mode.title, symbol: "keyboard.fill", color: .blue, help: "Expands") {
+            OptionPill(title: snippet.mode.title, symbol: "keyboard.fill", color: .blue, help: "When the shortcut expands as you type") {
                 Picker("Expands", selection: $snippet.mode) {
                     ForEach(ExpansionMode.allCases) { Text($0.title).tag($0) }
                 }
             }
+            .pillCaption("Expands")
 
             OptionPill(title: snippet.animation?.title ?? "Default (\(state.defaultAnimationsTitle))",
-                       symbol: "sparkles", color: .orange, help: "Effect") {
+                       symbol: "sparkles", color: .orange, help: "The effect that plays when it expands") {
                 // Spelled out because Binding has its own animation(_:) method.
                 Picker("Effect", selection: Binding(get: { snippet.animation }, set: { snippet.animation = $0 })) {
                     Text("Default (\(state.defaultAnimationsTitle))").tag(ReplacementAnimation?.none)
@@ -245,24 +247,43 @@ struct SnippetDetailView: View {
                     }
                 }
             }
+            .pillCaption("Effect")
 
             appsMenu
+                .pillCaption("Works in")
 
             Button {
                 snippet.matchesAnyCase.toggle()
             } label: {
-                PillLabel(title: "Any capitals",
+                PillLabel(title: capitalsTitle,
                           symbol: snippet.matchesAnyCase ? "checkmark.circle.fill" : "circle",
                           color: snippet.matchesAnyCase ? .green : .gray, showsChevron: false)
             }
             .buttonStyle(.plain)
             .focusEffectDisabled()
-            .help("Also expand when typed in other capitals, matching the text's capitals to how you typed it")
+            .help(snippet.matchesAnyCase
+                  ? "On: the shortcut expands however you capitalise it, and the text follows your capitals. Click to only expand when typed exactly."
+                  : "Off: the shortcut only expands when typed exactly as written. Click to expand in any capitals.")
             .accessibilityLabel("Match any capitals")
             .accessibilityValue(snippet.matchesAnyCase ? "On" : "Off")
             .accessibilityAddTraits(snippet.matchesAnyCase ? [.isSelected, .isButton] : .isButton)
+            .pillCaption("Match capitals")
         }
         .fixedSize()
+    }
+
+    /// Explains the capitals setting with this quill's own shortcut, such as "Any: ead, EAD".
+    private var capitalsTitle: String {
+        let trigger = snippet.trigger
+        let lower = trigger.lowercased(), upper = trigger.uppercased()
+        guard !trigger.isEmpty, trigger.count <= 10, lower != upper else {
+            return snippet.matchesAnyCase ? "Any capitals" : "Exactly as typed"
+        }
+        if snippet.matchesAnyCase {
+            let other = trigger == lower ? upper : lower
+            return "Any: \(trigger), \(other)…"
+        }
+        return "Only \(trigger) exactly"
     }
 
     // MARK: Notes
@@ -405,6 +426,20 @@ struct PillLabel: View {
         .background(color.opacity(0.14), in: Capsule())
         .overlay(Capsule().strokeBorder(color.opacity(0.22), lineWidth: 0.5))
         .contentShape(Capsule())
+    }
+}
+
+extension View {
+    /// A small label above an option pill, saying what the pill sets.
+    fileprivate func pillCaption(_ text: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(text)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
+                .padding(.leading, 10)
+                .accessibilityHidden(true)
+            self
+        }
     }
 }
 
