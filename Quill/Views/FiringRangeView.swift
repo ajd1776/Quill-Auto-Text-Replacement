@@ -113,7 +113,8 @@ struct FiringRangeView: View {
     // MARK: Cheat sheet
 
     private var cheatSheet: some View {
-        VStack(spacing: 0) {
+        let quills = quills
+        return VStack(spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
                 TextField("Search Quills", text: $search)

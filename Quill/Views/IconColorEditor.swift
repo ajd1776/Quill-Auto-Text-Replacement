@@ -415,25 +415,3 @@ private struct Swatch: View {
     }
 }
 
-private struct IconChoice: View {
-    let symbol: String
-    let tint: Color
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Image(systemName: symbol)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(isSelected ? .white : .primary)
-                .frame(width: 32, height: 32)
-                .background(isSelected ? tint : Color.secondary.opacity(0.16), in: Circle())
-                .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .help(symbol)
-        .accessibilityLabel(symbol.replacingOccurrences(of: ".fill", with: "").replacingOccurrences(of: ".", with: " "))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-        .animation(.snappy(duration: 0.15), value: isSelected)
-    }
-}

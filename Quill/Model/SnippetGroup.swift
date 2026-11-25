@@ -105,30 +105,3 @@ enum GroupColor: String, Codable, CaseIterable, Identifiable {
     }
 }
 
-/// The SF Symbols offered for groups and snippets.
-enum SnippetSymbols {
-    static let all: [(name: String, title: String)] = [
-        ("folder.fill", "Folder"),
-        ("person.fill", "Person"),
-        ("envelope.fill", "Email"),
-        ("phone.fill", "Phone"),
-        ("house.fill", "Home"),
-        ("briefcase.fill", "Work"),
-        ("cart.fill", "Shopping"),
-        ("bag.fill", "Store"),
-        ("shippingbox.fill", "Shipping"),
-        ("tag.fill", "Tag"),
-        ("link", "Link"),
-        ("signature", "Signature"),
-        ("text.quote", "Quote"),
-        ("bubble.left.fill", "Message"),
-        ("calendar", "Calendar"),
-        ("creditcard.fill", "Payment"),
-        ("mappin.and.ellipse", "Address"),
-        ("chevron.left.forwardslash.chevron.right", "Code"),
-        ("star.fill", "Star"),
-        ("heart.fill", "Heart"),
-        ("bolt.fill", "Bolt"),
-        ("sparkles", "Sparkles"),
-    ]
-}

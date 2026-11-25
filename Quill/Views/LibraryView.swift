@@ -62,15 +62,6 @@ struct LibraryView: View {
                     .environment(state)
             }
         }
-        .sheet(isPresented: Binding(
-            get: { state.colorPickerGroupID != nil },
-            set: { if !$0 { state.colorPickerGroupID = nil } }
-        )) {
-            if let id = state.colorPickerGroupID {
-                GroupColorPicker(groupID: id)
-                    .environment(state)
-            }
-        }
         .sheet(item: $state.appearanceTarget) { target in
             IconColorEditor(target: target)
                 .environment(state)
@@ -78,9 +69,6 @@ struct LibraryView: View {
         .sheet(isPresented: $state.isShowingPacks) {
             PackGallery()
                 .environment(state)
-        }
-        .sheet(item: $state.iconPickerTarget) { target in
-            iconPickerSheet(for: target)
         }
         .sheet(isPresented: $state.isShowingPalette) {
             CommandPalette()
@@ -195,13 +183,14 @@ struct LibraryView: View {
             }
 
             ForEach(store.groups) { group in
-                let snippets = visible(store.snippets(in: group.id))
+                let all = store.snippets(in: group.id)
+                let snippets = visible(all)
                 if !isSearching || !snippets.isEmpty {
                     Section {
                         if group.isExpanded || isSearching { rows(for: snippets) }
                     } header: {
                         DropHeader(groupID: group.id) {
-                            GroupHeader(group: group, count: store.snippets(in: group.id).count)
+                            GroupHeader(group: group, count: all.count)
                         }
                     }
                     .collapsible(false)
@@ -354,23 +343,6 @@ struct LibraryView: View {
         } else {
             ContentUnavailableView("Select a Quill", systemImage: "pencil.line",
                                    description: Text("Choose a quill in the sidebar to edit it."))
-        }
-    }
-
-    @ViewBuilder
-    private func iconPickerSheet(for target: AppState.IconTarget) -> some View {
-        switch target {
-        case .group(let id):
-            let group = store.group(id)
-            IconPicker(current: group?.symbol, tint: group?.tint ?? .accentColor) { icon in
-                if let icon { store.updateGroup(id) { $0.symbol = icon } }
-            }
-        case .snippet(let id):
-            let snippet = store.snippet(id)
-            let group = snippet.flatMap(store.group(for:))
-            IconPicker(current: snippet?.symbol, tint: group?.tint ?? .accentColor, defaultTitle: "Use Group Icon") { icon in
-                store.update(id) { $0.symbol = icon }
-            }
         }
     }
 
@@ -660,7 +632,7 @@ private struct GroupHeader: View {
         }
         .accessibilityAction(named: "New Quill") { state.newSnippet(in: group.id) }
         .accessibilityAction(named: "Rename") { state.renamingGroupID = group.id }
-        .accessibilityAction(named: "Change Colour") { state.colorPickerGroupID = group.id }
+        .accessibilityAction(named: "Edit") { state.appearanceTarget = .group(group.id) }
     }
 }
 
@@ -687,27 +659,6 @@ private struct DisclosureArrow: View {
 }
 
 /// Overview and History rows at the top of the sidebar.
-private struct SidebarLink: View {
-    let title: String
-    let symbol: String
-    let color: Color
-    var badge: String?
-
-    var body: some View {
-        HStack(spacing: 10) {
-            SnippetIcon(symbol: symbol, color: color, size: 26)
-            Text(title).font(.body.weight(.medium))
-            Spacer()
-            if let badge {
-                Text(badge)
-                    .font(.caption)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-            }
-        }
-    }
-}
-
 private struct SnippetRow: View {
     let snippet: Snippet
     let group: SnippetGroup?

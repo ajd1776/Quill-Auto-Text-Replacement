@@ -165,23 +165,9 @@ final class StoreTests: XCTestCase {
     }
 }
 
-/// The app-level filters the sidebar uses.
+/// App-wide state: pages, effects and notes.
 @MainActor
-final class ScopeTests: XCTestCase {
-    func testScopes() {
-        let state = AppState.shared
-        let all = state.snippets(in: .all)
-        XCTAssertEqual(all.count, state.store.snippets.count)
-        XCTAssertEqual(state.snippets(in: .enabled).count + state.snippets(in: .disabled).count, all.count)
-        XCTAssertTrue(state.snippets(in: .tokens).allSatisfy { TokenRenderer.containsTokens($0.expansion) })
-        XCTAssertTrue(state.snippets(in: .recent).allSatisfy { $0.lastUsed != nil })
-        for group in state.store.groups {
-            XCTAssertTrue(state.snippets(in: .group(group.id)).allSatisfy { $0.groupID == group.id })
-            XCTAssertEqual(state.title(for: .group(group.id)), group.name)
-        }
-        XCTAssertEqual(state.title(for: .all), "All Quills")
-    }
-
+final class AppStateTests: XCTestCase {
     func testCombiningDefaultEffects() {
         let state = AppState.shared
         let saved = state.defaultAnimations

@@ -15,7 +15,7 @@ final class DemoStage {
     private var extraWindow: NSWindow?
 
     /// The stage size in points. Recorded at 2x.
-    static let size = CGSize(width: 760, height: 300)
+    nonisolated static let size = CGSize(width: 760, height: 300)
 
     private var state: AppState { AppState.shared }
 
@@ -136,7 +136,6 @@ final class DemoStage {
     /// The library window: editor, switches, groups, Icon and Colour, then Stats and the Firing Range.
     private func tour(openLibrary: @escaping () -> Void) {
         state.selection = []
-        state.scope = .all
         state.selection = []
         openLibrary()
         Task {

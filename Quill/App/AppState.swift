@@ -27,27 +27,6 @@ enum AppPage: String, CaseIterable, Identifiable {
         case .settings: "Settings"
         }
     }
-    var symbol: String {
-        switch self {
-        case .snippets: "text.quote"
-        case .stats: "chart.bar.xaxis"
-        case .history: "clock.arrow.circlepath"
-        case .firingRange: "scope"
-        case .settings: "gearshape"
-        }
-    }
-}
-
-/// What the Snippets page shows, chosen in its sidebar.
-enum SnippetScope: Hashable {
-    case all, recent, enabled, disabled, tokens, ungrouped
-    case group(SnippetGroup.ID)
-}
-
-/// How the Snippets page lays snippets out.
-enum SnippetLayout: String, CaseIterable, Identifiable {
-    case list, grid
-    var id: String { rawValue }
 }
 
 /// App-wide state shared by the menu bar menu, library window, search panel and settings.
@@ -220,7 +199,6 @@ final class AppState {
 
     // MARK: Library window
 
-    var scope: SnippetScope = .all
 
     /// What's selected in the sidebar: Stats, History, or one or more snippets.
     var selection: Set<SidebarItem> = [] {
@@ -236,45 +214,12 @@ final class AppState {
         didSet { if page != .snippets, !selection.isEmpty { selection = [] } }
     }
 
-    /// The snippets a scope covers, before search and sorting.
-    func snippets(in scope: SnippetScope) -> [Snippet] {
-        switch scope {
-        case .all: store.snippets
-        case .recent: store.snippets.filter { $0.lastUsed != nil }
-        case .enabled: store.snippets.filter(store.isActive)
-        case .disabled: store.snippets.filter { !store.isActive($0) }
-        case .tokens: store.snippets.filter { TokenRenderer.containsTokens($0.expansion) }
-        case .ungrouped: store.snippets(in: nil)
-        case .group(let id): store.snippets(in: id)
-        }
-    }
-
-    func title(for scope: SnippetScope) -> String {
-        switch scope {
-        case .all: "All Quills"
-        case .recent: "Recently Used"
-        case .enabled: "On"
-        case .disabled: "Off"
-        case .tokens: "With Tokens"
-        case .ungrouped: "Ungrouped"
-        case .group(let id): store.group(id)?.name ?? "Group"
-        }
-    }
     var importSession: ImportSession?
     var alertMessage: (title: String, message: String)?
     var isShowingFileImporter = false
     var renamingGroupID: SnippetGroup.ID?
     var isShowingPalette = false
     var isShowingPacks = false
-    var colorPickerGroupID: SnippetGroup.ID?
-    /// What the icon picker sheet is choosing an icon for, when opened from a menu.
-    var iconPickerTarget: IconTarget?
-
-    enum IconTarget: Identifiable, Hashable {
-        case group(SnippetGroup.ID)
-        case snippet(Snippet.ID)
-        var id: Self { self }
-    }
     var deletingGroupID: SnippetGroup.ID?
 
     var selectedSnippetIDs: Set<Snippet.ID> {
@@ -649,11 +594,10 @@ final class AppState {
 
     /// The group a new snippet should go in: the group of the selected snippet, if any.
     private var currentGroupID: SnippetGroup.ID? {
-        if case .group(let id) = scope { return id }
-        return selectedSnippetIDs.first.flatMap { store.snippet($0)?.groupID }
+        selectedSnippetIDs.first.flatMap { store.snippet($0)?.groupID }
     }
 
-    /// The Icon and Colour sheet, also the first step of a new snippet or group.
+    /// The Edit sheet: also the first step of a new quill or group.
     var appearanceTarget: AppearanceTarget?
 
     /// Starts a new snippet: the sheet asks for its shortcut, colour and icon, then it opens in the window.

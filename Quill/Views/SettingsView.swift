@@ -7,30 +7,10 @@ enum SettingsPane: String, CaseIterable, Identifiable {
     var title: String { rawValue.capitalized }
     /// The tabs along the top of Settings: five at most, so About lives inside General.
     static let tabs: [SettingsPane] = [.general, .suggestions, .effects, .shortcuts, .backup]
-    var symbol: String {
-        switch self {
-        case .general: "gearshape.fill"
-        case .suggestions: "text.bubble.fill"
-        case .effects: "sparkles"
-        case .shortcuts: "command"
-        case .backup: "externaldrive.fill"
-        case .about: "info.circle.fill"
-        }
-    }
-    var color: Color {
-        switch self {
-        case .general: .gray
-        case .suggestions: .blue
-        case .effects: .purple
-        case .shortcuts: .indigo
-        case .backup: .teal
-        case .about: .blue
-        }
-    }
 }
 
-/// Quill Settings: one page in the main window, with an row of tabs
-/// along the bottom, just above the main tab bar. Five tabs at most; About sits at the bottom of General.
+/// Quill Settings: one page in the main window, with a row of tabs along the bottom, just above
+/// the main tab bar. Five tabs at most; About sits at the bottom of General.
 struct SettingsView: View {
     @AppStorage("settingsPane") private var stored: SettingsPane = .general
 

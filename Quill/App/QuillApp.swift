@@ -125,7 +125,7 @@ private struct MenuBarLabel: View {
             case "iconpicker":
                 openWindow(id: WindowID.library)
                 if let group = state.store.groups.first {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.iconPickerTarget = .group(group.id) }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.appearanceTarget = .group(group.id) }
                 }
             case "update":
                 openWindow(id: WindowID.library)

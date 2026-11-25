@@ -47,8 +47,13 @@ struct QuillLibrary: Codable {
 @Observable
 final class SnippetStore {
     var snippets: [Snippet] = [] {
-        didSet { changed() }
+        didSet {
+            triggerCounts = Dictionary(snippets.map { ($0.trigger, 1) }, uniquingKeysWith: +)
+            changed()
+        }
     }
+    /// How many quills use each shortcut, kept up to date so the duplicate check is a lookup.
+    @ObservationIgnored private var triggerCounts: [String: Int] = [:]
     var groups: [SnippetGroup] = [] {
         didSet { changed() }
     }
@@ -459,8 +464,7 @@ final class SnippetStore {
         if snippet.trigger.isEmpty { return "Enter a shortcut to use this quill." }
         if snippet.trigger.contains(where: \.isWhitespace) { return "Shortcuts can't contain spaces." }
         if snippet.expansion.isEmpty { return "Add the text this shortcut expands to." }
-        let duplicate = snippets.contains { $0.id != snippet.id && $0.trigger == snippet.trigger }
-        if duplicate { return "Another quill already uses this shortcut." }
+        if triggerCounts[snippet.trigger, default: 0] > 1 { return "Another quill already uses this shortcut." }
         return nil
     }
 }
