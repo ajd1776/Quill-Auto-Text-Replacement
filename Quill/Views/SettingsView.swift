@@ -352,8 +352,16 @@ struct EffectsSettingsPane: View {
                         .accessibilityIdentifier("multiple-effects-warning")
                 }
 
+                let heldBack = state.defaultAnimations.filter { reduceMotion && !$0.survivesReduceMotion }
+                if !heldBack.isEmpty {
+                    Label("Reduce Motion is on, so \(heldBack.map(\.title).joined(separator: " and ")) won't play. Turn on Play animations anyway below to include \(heldBack.count == 1 ? "it" : "them").",
+                          systemImage: "figure.walk.motion")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+
                 AnimationPreview(
-                    style: state.defaultAnimation,
+                    styles: state.defaultAnimations,
                     speed: state.typewriterSpeed,
                     trigger: sample.trigger,
                     expansion: sample.expansion,

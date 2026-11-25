@@ -1,9 +1,10 @@
 import SwiftUI
 
-/// A mock text field that types a shortcut, then plays the chosen replacement animation
-/// using the same effect views Quill draws over other apps.
+/// A mock text field that types a shortcut, then plays the chosen replacement animations
+/// together, using the same effect views Quill draws over other apps.
 struct AnimationPreview: View {
-    let style: ReplacementAnimation
+    /// Every effect to play. The typewriter types the text; the rest play over it at once.
+    let styles: [ReplacementAnimation]
     let speed: Double
     let trigger: String
     let expansion: String
@@ -15,7 +16,7 @@ struct AnimationPreview: View {
     var prefix = "Email me at "
 
     @State private var shown = ""
-    @State private var effect: ReplacementAnimation?
+    @State private var effects: [ReplacementAnimation] = []
     @State private var effectID = 0
     @State private var task: Task<Void, Never>?
     @State private var textFrame: CGRect = .zero
@@ -47,7 +48,7 @@ struct AnimationPreview: View {
                 Spacer(minLength: 0).frame(height: 34)
             }
 
-            if let effect {
+            ForEach(effects, id: \.self) { effect in
                 OverlayEffectView(style: effect, context: EffectContext(
                     line: textFrame,
                     caret: CGPoint(x: textFrame.maxX + 1, y: textFrame.midY),
@@ -56,7 +57,8 @@ struct AnimationPreview: View {
                     fontSize: 15,
                     reduceMotion: reduceMotion
                 ))
-                .id(effectID)
+                .id("\(effect.rawValue)-\(effectID)")
+                .allowsHitTesting(false)
             }
         }
         .coordinateSpace(.named(Self.space))
@@ -68,18 +70,18 @@ struct AnimationPreview: View {
                 .help("Replay Preview")
         }
         .onAppear(perform: play)
-        .onChange(of: style) { play() }
+        .onChange(of: styles) { play() }
         .onChange(of: reduceMotion) { play() }
         .onDisappear { task?.cancel() }
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Preview of the \(style.title) animation")
+        .accessibilityLabel("Preview of \(styles.map(\.title).joined(separator: " and "))")
     }
 
     private func play() {
         task?.cancel()
         task = Task { @MainActor in
             shown = ""
-            effect = nil
+            effects = []
             try? await Task.sleep(for: .milliseconds(350))
             for character in trigger {
                 guard !Task.isCancelled else { return }
@@ -89,8 +91,8 @@ struct AnimationPreview: View {
             try? await Task.sleep(for: .milliseconds(380))
             guard !Task.isCancelled else { return }
 
-            let effective = reduceMotion && !style.survivesReduceMotion ? .instant : style
-            if effective == .typewriter {
+            let playable = styles.filter { $0 != .instant && (!reduceMotion || $0.survivesReduceMotion) }
+            if playable.contains(.typewriter) {
                 shown = ""
                 let interval = min(1 / max(speed, 1), 3.0 / Double(max(expansion.count, 1)))
                 for character in expansion {
@@ -100,13 +102,16 @@ struct AnimationPreview: View {
                 }
             } else {
                 shown = expansion
-                guard effective != .instant else { return }
-                try? await Task.sleep(for: .milliseconds(40))
-                effectID += 1
-                effect = effective
-                try? await Task.sleep(for: .seconds(OverlayEffectView.duration(for: effective)))
-                if !Task.isCancelled { effect = nil }
             }
+            // Every other effect plays over the finished text, all at once, as in other apps.
+            let overlays = playable.filter { $0 != .typewriter }
+            guard !overlays.isEmpty, !Task.isCancelled else { return }
+            try? await Task.sleep(for: .milliseconds(40))
+            effectID += 1
+            effects = overlays
+            let longest = overlays.map(OverlayEffectView.duration(for:)).max() ?? 1
+            try? await Task.sleep(for: .seconds(longest))
+            if !Task.isCancelled { effects = [] }
         }
     }
 }
