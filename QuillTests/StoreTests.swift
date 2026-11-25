@@ -182,6 +182,41 @@ final class ScopeTests: XCTestCase {
         XCTAssertEqual(state.title(for: .all), "All Quills")
     }
 
+    func testCombiningDefaultEffects() {
+        let state = AppState.shared
+        let saved = state.defaultAnimations
+        defer { state.defaultAnimations = saved }
+        state.defaultAnimations = [.popBadge]
+        state.toggleDefaultAnimation(.confetti)
+        XCTAssertEqual(state.defaultAnimations, [.popBadge, .confetti], "Clicking another effect adds it")
+        XCTAssertEqual(state.defaultAnimationsTitle, "Pop Badge + Confetti")
+        state.toggleDefaultAnimation(.popBadge)
+        XCTAssertEqual(state.defaultAnimations, [.confetti], "Clicking a chosen effect removes it")
+        state.toggleDefaultAnimation(.confetti)
+        XCTAssertEqual(state.defaultAnimations, [.instant], "Removing the last one leaves None")
+        state.toggleDefaultAnimation(.sparkle)
+        XCTAssertEqual(state.defaultAnimations, [.sparkle], "Choosing an effect replaces None")
+        state.toggleDefaultAnimation(.instant)
+        XCTAssertEqual(state.defaultAnimations, [.instant], "None stands alone")
+        var quill = Snippet(trigger: "x", expansion: "y")
+        state.defaultAnimations = [.typewriter, .confetti]
+        XCTAssertEqual(state.animations(for: quill), [.typewriter, .confetti], "A quill without its own effect uses the defaults")
+        quill.animation = .cyber
+        XCTAssertEqual(state.animations(for: quill), [.cyber], "Its own effect replaces them")
+    }
+
+    func testNotesAreSearchedAndSaved() throws {
+        var quill = Snippet(trigger: "eml", expansion: "name@example.com")
+        quill.notes = "Work address for invoices"
+        XCTAssertTrue(quill.matches("invoices"), "Searches match notes")
+        XCTAssertTrue(quill.matches("EML"))
+        XCTAssertFalse(quill.matches("phone"))
+        let decoded = try JSONDecoder().decode(Snippet.self, from: JSONEncoder().encode(quill))
+        XCTAssertEqual(decoded.notes, "Work address for invoices")
+        let legacy = try JSONDecoder().decode(Snippet.self, from: Data(#"{"trigger":"a","expansion":"b"}"#.utf8))
+        XCTAssertEqual(legacy.notes, "", "Files without notes still load")
+    }
+
     func testTabBarPagesAndSelection() {
         let state = AppState.shared
         state.page = .stats

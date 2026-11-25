@@ -80,6 +80,20 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(row("zzq").exists, "It appears in the sidebar")
     }
 
+    func testEditOpensOneSheetForEverything() {
+        launch()
+        let eml = row("eml")
+        XCTAssertTrue(eml.waitForExistence(timeout: 5))
+        eml.rightClick()
+        XCTAssertFalse(app.menuItems["Move to Group"].exists, "Settings live in the Edit sheet, not the menu")
+        app.menuItems["Edit…"].firstMatch.click()
+        let name = app.textFields["appearance-name"].firstMatch
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Edit opens the same sheet as New Quill")
+        XCTAssertEqual(name.value as? String, "eml")
+        XCTAssertTrue(app.textViews["appearance-text"].firstMatch.exists, "The sheet edits the text too")
+        app.buttons["Cancel"].firstMatch.click()
+    }
+
     func testIconOpensAppearanceSheet() {
         launch()
         let shop = header("Shop")
@@ -242,6 +256,8 @@ final class QuillUITests: XCTestCase {
         XCTAssertTrue(text("Allow Accessibility Access").waitForExistence(timeout: 5))
         next.click()
         XCTAssertTrue(text("Bring In Your Quills").waitForExistence(timeout: 5))
+        next.click()
+        XCTAssertTrue(text("The Space After a Quill").waitForExistence(timeout: 5))
         next.click()
         XCTAssertTrue(text("You're Ready").waitForExistence(timeout: 5))
         XCTAssertTrue(app.buttons["Open Quill"].exists)

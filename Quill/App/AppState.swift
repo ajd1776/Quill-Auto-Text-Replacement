@@ -95,8 +95,37 @@ final class AppState {
 
     // MARK: Preferences
 
-    var defaultAnimation: ReplacementAnimation = .popBadge {
-        didSet { defaults.set(defaultAnimation.rawValue, forKey: Keys.defaultAnimation) }
+    /// The default effects, in the order chosen. Usually one; several play together.
+    var defaultAnimations: [ReplacementAnimation] = [.popBadge] {
+        didSet { defaults.set(defaultAnimations.map(\.rawValue), forKey: Keys.defaultAnimations) }
+    }
+
+    /// The first default effect, for places that show just one.
+    var defaultAnimation: ReplacementAnimation {
+        get { defaultAnimations.first ?? .instant }
+        set { defaultAnimations = [newValue] }
+    }
+
+    /// The default effects by name, for example "Pop Badge + Confetti".
+    var defaultAnimationsTitle: String {
+        defaultAnimations.map(\.title).joined(separator: " + ")
+    }
+
+    /// Adds or removes a default effect. None stands alone, and at least one is always chosen.
+    func toggleDefaultAnimation(_ style: ReplacementAnimation) {
+        if style == .instant { defaultAnimations = [.instant]; return }
+        var list = defaultAnimations.filter { $0 != .instant }
+        if let index = list.firstIndex(of: style) {
+            list.remove(at: index)
+        } else {
+            list.append(style)
+        }
+        defaultAnimations = list.isEmpty ? [.instant] : list
+    }
+
+    /// The effects a quill plays: its own, or the defaults.
+    func animations(for snippet: Snippet) -> [ReplacementAnimation] {
+        snippet.animation.map { [$0] } ?? defaultAnimations
     }
 
     var typewriterSpeed: Double = 45 {
@@ -125,7 +154,8 @@ final class AppState {
     }
 
     /// Whether the space typed to trigger a snippet stays after the text.
-    var addsSpaceAfterSnippet = true {
+    /// Off by default: the space typed to expand a shortcut is removed, so the text ends right after the quill.
+    var addsSpaceAfterSnippet = false {
         didSet {
             defaults.set(addsSpaceAfterSnippet, forKey: Keys.addsSpaceAfterSnippet)
             engine.keepsTriggerSpace = addsSpaceAfterSnippet
@@ -319,6 +349,7 @@ final class AppState {
 
     private enum Keys {
         static let defaultAnimation = "defaultAnimation"
+        static let defaultAnimations = "defaultAnimations"
         static let typewriterSpeed = "typewriterSpeed"
         static let animatesWithReduceMotion = "animatesWithReduceMotion"
         static let showsSuggestions = "showsSuggestions"
@@ -363,14 +394,19 @@ final class AppState {
     }
 
     private func loadPreferences() {
-        defaultAnimation = defaults.string(forKey: Keys.defaultAnimation).flatMap(ReplacementAnimation.init) ?? .popBadge
+        if let saved = defaults.stringArray(forKey: Keys.defaultAnimations)?.compactMap(ReplacementAnimation.init), !saved.isEmpty {
+            defaultAnimations = saved
+        } else {
+            // Quill 1.4 and earlier saved a single effect.
+            defaultAnimations = [defaults.string(forKey: Keys.defaultAnimation).flatMap(ReplacementAnimation.init) ?? .popBadge]
+        }
         if defaults.object(forKey: Keys.typewriterSpeed) != nil {
             typewriterSpeed = defaults.double(forKey: Keys.typewriterSpeed)
         }
         animatesWithReduceMotion = defaults.bool(forKey: Keys.animatesWithReduceMotion)
         showsSuggestions = defaults.object(forKey: Keys.showsSuggestions) as? Bool ?? true
         showsPartialSuggestions = defaults.object(forKey: Keys.showsPartialSuggestions) as? Bool ?? true
-        addsSpaceAfterSnippet = defaults.object(forKey: Keys.addsSpaceAfterSnippet) as? Bool ?? true
+        addsSpaceAfterSnippet = defaults.object(forKey: Keys.addsSpaceAfterSnippet) as? Bool ?? false
         bubblePosition = defaults.string(forKey: Keys.bubblePosition).flatMap(BubblePosition.init) ?? .below
         soundName = defaults.string(forKey: Keys.soundName)
         if defaults.object(forKey: Keys.soundVolume) != nil {
@@ -399,7 +435,9 @@ final class AppState {
         engine.keepsTriggerSpace = addsSpaceAfterSnippet
         engine.styleResolver = { [unowned self] snippet in
             if self.isFiringRangeKey, let effect = self.rangeEffect { return effect }
-            return snippet.animation ?? self.defaultAnimation
+            // The typewriter changes how the text is typed, so it leads when chosen; the rest are overlays.
+            let styles = self.animations(for: snippet)
+            return styles.contains(.typewriter) ? .typewriter : (styles.first ?? .instant)
         }
         engine.onExpanded = { [unowned self] expansion in self.didExpand(expansion) }
         engine.listensInQuill = { [unowned self] in self.isFiringRangeKey }
@@ -562,7 +600,7 @@ final class AppState {
             // Practice doesn't count towards Stats or History.
             rangeHits.insert(RangeHit(expansion), at: 0)
             playSound()
-            OverlayPresenter.shared.play(expansion.style, trigger: expansion.snippet.trigger, text: expansion.renderedText)
+            playEffects(for: expansion)
             return
         }
         store.recordUse(expansion.snippet.id)
@@ -571,7 +609,15 @@ final class AppState {
                            appName: lastExternalApp?.localizedName, bundleID: lastExternalApp?.bundleIdentifier)
         }
         playSound()
-        OverlayPresenter.shared.play(expansion.style, trigger: expansion.snippet.trigger, text: expansion.renderedText)
+        playEffects(for: expansion)
+    }
+
+    /// Draws every overlay effect the quill uses, together. The Firing Range's effect, when set, replaces them.
+    private func playEffects(for expansion: ExpansionEngine.Expansion) {
+        let styles = isFiringRangeKey && rangeEffect != nil ? [expansion.style] : animations(for: expansion.snippet)
+        for style in styles {
+            OverlayPresenter.shared.play(style, trigger: expansion.snippet.trigger, text: expansion.renderedText)
+        }
     }
 
     func playSound(named name: String? = nil) {

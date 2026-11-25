@@ -14,6 +14,14 @@ struct SnippetActionsMenu: View {
     var body: some View {
         let allOn = !snippets.isEmpty && snippets.allSatisfy(\.isEnabled)
 
+        // Everything about a quill (shortcut, text, notes, group, icon and colour) is edited in one sheet.
+        if let single {
+            Button("Edit…", systemImage: "pencil") {
+                state.appearanceTarget = .snippet(single.id)
+            }
+            Divider()
+        }
+
         Button(allOn ? "Turn Off" : "Turn On", systemImage: allOn ? "pause.circle" : "play.circle") {
             for id in ids { store.setEnabled(id, !allOn) }
         }
@@ -35,61 +43,9 @@ struct SnippetActionsMenu: View {
 
         Divider()
 
-        Menu("Move to Group", systemImage: "folder") {
-            Button("No Group") { store.move(ids, to: nil) }
-            if !store.groups.isEmpty { Divider() }
-            ForEach(store.groups) { group in
-                Button(group.name, systemImage: group.symbol) { store.move(ids, to: group.id) }
-            }
-            Divider()
-            Button("New Group…") {
-                let group = store.addGroup()
-                store.move(ids, to: group.id)
-                state.renamingGroupID = group.id
-            }
-        }
-
-        Menu("Expands", systemImage: "keyboard") {
-            Picker("Expands", selection: binding(\.mode, fallback: .afterDelimiter)) {
-                ForEach(ExpansionMode.allCases) { Text($0.title).tag($0) }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        }
-
-        Menu("Animation", systemImage: "sparkles") {
-            Picker("Animation", selection: binding(\.animation, fallback: nil)) {
-                Text("Default (\(state.defaultAnimation.title))").tag(ReplacementAnimation?.none)
-                Divider()
-                ForEach(ReplacementAnimation.allCases) { style in
-                    Label(style.title, systemImage: style.symbol).tag(Optional(style))
-                }
-            }
-            .pickerStyle(.inline)
-            .labelsHidden()
-        }
-
-        if ids.count == 1, let id = ids.first {
-            Button("Icon and Colour…", systemImage: "paintpalette") {
-                state.appearanceTarget = .snippet(id)
-            }
-        }
-
-        Divider()
-
         Button(ids.count == 1 ? "Delete" : "Delete \(ids.count) Quills", systemImage: "trash", role: .destructive) {
             onDelete(ids)
         }
-    }
-
-    /// A binding that reads the first snippet's value and writes to all of them.
-    private func binding<Value>(_ keyPath: WritableKeyPath<Snippet, Value>, fallback: Value) -> Binding<Value> {
-        Binding(
-            get: { snippets.first?[keyPath: keyPath] ?? fallback },
-            set: { value in
-                for id in ids { store.update(id) { $0[keyPath: keyPath] = value } }
-            }
-        )
     }
 }
 

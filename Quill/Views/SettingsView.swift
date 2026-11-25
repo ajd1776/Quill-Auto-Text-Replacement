@@ -157,9 +157,9 @@ struct GeneralSettingsPane: View {
             }
 
             Section {
-                Toggle("Add a space after a quill", isOn: Binding(
-                    get: { state.addsSpaceAfterSnippet },
-                    set: { state.addsSpaceAfterSnippet = $0 }
+                Toggle("Remove the space after a quill", isOn: Binding(
+                    get: { !state.addsSpaceAfterSnippet },
+                    set: { state.addsSpaceAfterSnippet = !$0 }
                 ))
             } header: {
                 Text("Expansion")
@@ -336,13 +336,21 @@ struct EffectsSettingsPane: View {
             Section {
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 5), spacing: 8) {
                     ForEach(ReplacementAnimation.allCases) { style in
-                        StyleTile(style: style, isSelected: state.defaultAnimation == style,
+                        StyleTile(style: style, isSelected: state.defaultAnimations.contains(style),
                                   isDimmed: reduceMotion && !style.survivesReduceMotion) {
-                            state.defaultAnimation = style
+                            withAnimation(.snappy(duration: 0.15)) { state.toggleDefaultAnimation(style) }
                         }
                     }
                 }
                 .padding(.vertical, 4)
+
+                if state.defaultAnimations.count > 1 {
+                    Label("\(state.defaultAnimations.count) effects are on: \(state.defaultAnimationsTitle). They play together, which can look busy.",
+                          systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout)
+                        .foregroundStyle(.orange)
+                        .accessibilityIdentifier("multiple-effects-warning")
+                }
 
                 AnimationPreview(
                     style: state.defaultAnimation,
@@ -352,7 +360,7 @@ struct EffectsSettingsPane: View {
                     reduceMotion: reduceMotion
                 )
 
-                if state.defaultAnimation == .typewriter {
+                if state.defaultAnimations.contains(.typewriter) {
                     LabeledContent("Typing speed") {
                         Slider(value: $state.typewriterSpeed, in: 15...120) {
                             Text("Typing speed")
@@ -366,9 +374,12 @@ struct EffectsSettingsPane: View {
                     }
                 }
             } header: {
-                Text("Default Animation")
+                Text("Default Animations")
             } footer: {
-                FooterText(state.defaultAnimation.explanation + " Any quill can use a different style, from its editor or right-click menu.")
+                FooterText((state.defaultAnimations.count > 1
+                            ? "Click an effect to add or remove it; the ones chosen play together."
+                            : state.defaultAnimation.explanation + " Click more effects to combine them.")
+                           + " Any quill can use a different effect from its editor.")
             }
 
             if systemReduceMotion {

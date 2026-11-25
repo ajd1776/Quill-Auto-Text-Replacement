@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// First-run tour in four steps: what Quill does, Accessibility access, bringing in
-/// snippets (macOS Text Replacements and starter packs), and where to find things.
+/// First-run tour in five steps: what Quill does, Accessibility access, bringing in quills
+/// (macOS Text Replacements and starter packs), the space after a quill, and where to find things.
 struct WelcomeView: View {
     @Environment(AppState.self) private var state
     @Environment(\.openWindow) private var openWindow
@@ -13,7 +13,7 @@ struct WelcomeView: View {
     @State private var replacements: [MacReplacementsImporter.Entry]?
     @State private var importedCount: Int?
 
-    private let steps = ["Welcome", "Access", "Quills", "Ready"]
+    private let steps = ["Welcome", "Access", "Quills", "Spacing", "Ready"]
 
     var body: some View {
         VStack(spacing: 0) {
@@ -22,6 +22,7 @@ struct WelcomeView: View {
                 case 0: intro
                 case 1: access
                 case 2: snippets
+                case 3: spacing
                 default: ready
                 }
             }
@@ -164,6 +165,35 @@ struct WelcomeView: View {
         .onAppear(perform: loadReplacements)
     }
 
+    /// Asks whether the space typed to expand a shortcut should stay. Removing it is the default.
+    private var spacing: some View {
+        VStack(spacing: 18) {
+            StepIcon(symbol: "space", color: .blue)
+            VStack(spacing: 6) {
+                Text("The Space After a Quill")
+                    .font(.title.weight(.bold))
+                Text("You type a space to expand a shortcut. Should that space stay after the text?")
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            VStack(spacing: 10) {
+                SpacingChoice(title: "Remove the space", badge: "Recommended",
+                              example: "Email name@example.com|",
+                              detail: "The text ends right where you want it. Return, Tab and punctuation still go through.",
+                              isSelected: !state.addsSpaceAfterSnippet) { state.addsSpaceAfterSnippet = false }
+                    .accessibilityIdentifier("welcome-remove-space")
+                SpacingChoice(title: "Keep the space", badge: nil,
+                              example: "Email name@example.com |",
+                              detail: "Carry on typing the next word straight away.",
+                              isSelected: state.addsSpaceAfterSnippet) { state.addsSpaceAfterSnippet = true }
+                    .accessibilityIdentifier("welcome-keep-space")
+            }
+            Text("You can change this any time in Settings › General.")
+                .font(.callout)
+                .foregroundStyle(.secondary)
+        }
+    }
+
     private var ready: some View {
         VStack(spacing: 18) {
             StepIcon(symbol: "checkmark", color: .green)
@@ -273,6 +303,56 @@ struct WelcomeView: View {
         hasCompletedWelcome = true
         openWindow(id: WindowID.library)
         dismissWindow(id: WindowID.welcome)
+    }
+}
+
+/// One answer on the Spacing step: a title, an example with the cursor, and a check when chosen.
+private struct SpacingChoice: View {
+    let title: String
+    let badge: String?
+    let example: String
+    let detail: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18))
+                    .foregroundStyle(isSelected ? Color.accentColor : Color.secondary)
+                VStack(alignment: .leading, spacing: 4) {
+                    HStack(spacing: 8) {
+                        Text(title).font(.headline)
+                        if let badge {
+                            Text(badge)
+                                .font(.caption.weight(.semibold))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 2)
+                                .background(Color.accentColor.opacity(0.15), in: Capsule())
+                                .foregroundStyle(Color.accentColor)
+                        }
+                    }
+                    Text(example)
+                        .font(.system(.callout, design: .monospaced))
+                    Text(detail)
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 0)
+            }
+            .padding(12)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(isSelected ? Color.accentColor : .clear, lineWidth: 2)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 }
 

@@ -24,8 +24,8 @@ enum AppearanceTarget: Identifiable, Hashable {
     }
 }
 
-/// Name, colour and icon for a group or snippet, in one sheet. Also the first step of making a new one:
-/// name it, give it a look, then it opens in the window to fill in.
+/// Everything about a group or quill in one sheet: name or shortcut, (for quills) text, notes and group,
+/// colour and icon. The same sheet creates new ones and edits existing ones.
 struct IconColorEditor: View {
     let target: AppearanceTarget
 
@@ -38,8 +38,9 @@ struct IconColorEditor: View {
     /// A system colour name or #RRGGBB. nil, for a snippet, means "use the group's colour".
     @State private var colorValue: String?
     @State private var groupID: SnippetGroup.ID?
+    @State private var text = ""
+    @State private var notes = ""
     @State private var customColor: Color = .blue
-    @State private var isBrowsingSymbols = false
     @State private var didLoad = false
     @FocusState private var isNameFocused: Bool
 
@@ -66,6 +67,7 @@ struct IconColorEditor: View {
                 .accessibilityAddTraits(.isHeader)
             Form {
                 nameSection
+                if target.isSnippet { textSection }
                 colourSection
                 iconSection
             }
@@ -83,7 +85,7 @@ struct IconColorEditor: View {
             }
             .padding(16)
         }
-        .frame(width: 480, height: 700)
+        .frame(width: 520, height: 620)
         .navigationTitle(title)
         .onAppear(perform: load)
     }
@@ -134,7 +136,7 @@ struct IconColorEditor: View {
         } footer: {
             Group {
                 if name.trimmingCharacters(in: .whitespaces).isEmpty {
-                    Text(target.isSnippet ? "Type the shortcut you'll use, then the text it expands to in the window."
+                    Text(target.isSnippet ? "Type the shortcut you'll use, and below it the text it types."
                                           : "Give the group a name.")
                         .foregroundStyle(.secondary)
                 } else if let message = validation.message {
@@ -158,6 +160,28 @@ struct IconColorEditor: View {
             return ("Another quill already uses this shortcut.", false)
         }
         return (nil, false)
+    }
+
+    // MARK: Text and notes
+
+    private var textSection: some View {
+        Section {
+            TextEditor(text: $text)
+                .font(.body)
+                .frame(minHeight: 70, maxHeight: 120)
+                .scrollContentBackground(.hidden)
+                .accessibilityLabel("Text")
+                .accessibilityIdentifier("appearance-text")
+            TextField("Notes", text: $notes, prompt: Text("Add notes: what it's for, where you use it"), axis: .vertical)
+                .lineLimit(1...4)
+                .accessibilityIdentifier("appearance-notes")
+        } header: {
+            Text("Text")
+        } footer: {
+            Text("What the shortcut types. Tokens such as {date} or {input:Name} work here too. Notes are just for you.")
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
     }
 
     // MARK: Colour
@@ -235,35 +259,14 @@ struct IconColorEditor: View {
 
     private var iconSection: some View {
         Section {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 6), count: 9), spacing: 8) {
-                ForEach(Self.icons, id: \.self) { icon in
-                    IconChoice(symbol: icon, tint: tint, isSelected: shownSymbol == icon) {
-                        symbol = icon
-                    }
-                }
+            IconPicker(current: symbol, tint: tint, defaultTitle: target.isSnippet ? "Use Group Icon" : nil, isEmbedded: true) { icon in
+                symbol = icon
             }
-            .padding(.vertical, 6)
-
-            Button {
-                isBrowsingSymbols = true
-            } label: {
-                Label("All Symbols & Emoji…", systemImage: "square.grid.3x3.fill")
-            }
-            .buttonStyle(.borderless)
-            .popover(isPresented: $isBrowsingSymbols, arrowEdge: .trailing) {
-                IconPicker(current: symbol, tint: tint, defaultTitle: target.isSnippet ? "Use Group Icon" : nil) { icon in
-                    symbol = icon
-                }
-            }
-
-            if target.isSnippet, symbol != nil {
-                Button("Use the Group's Icon") { symbol = nil }
-                    .buttonStyle(.borderless)
-            }
+            .padding(.vertical, 4)
         } header: {
             Text("Icon")
         } footer: {
-            Text("Browse every SF Symbol by category, search them, or pick an emoji.")
+            Text("Search every symbol, or switch to Emoji.")
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
@@ -310,6 +313,8 @@ struct IconColorEditor: View {
             symbol = snippet.symbol
             colorValue = snippet.color
             groupID = snippet.groupID
+            text = snippet.expansion
+            notes = snippet.notes
         case .newGroup:
             symbol = "folder.fill"
             colorValue = GroupColor.blue.rawValue
@@ -355,6 +360,8 @@ struct IconColorEditor: View {
         snippet.symbol = symbol
         snippet.color = colorValue
         snippet.groupID = groupID
+        snippet.expansion = text
+        snippet.notes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 

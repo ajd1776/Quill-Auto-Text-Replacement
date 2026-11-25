@@ -26,8 +26,6 @@ struct SnippetDetailView: View {
                 tokenPreview
             }
             Divider()
-            notesField
-            Divider()
             footer
         }
         .background(Surface.editor)
@@ -86,12 +84,11 @@ struct SnippetDetailView: View {
                                    symbol: "pause.circle.fill", color: .secondary)
                     } else {
                         StatusPill(text: "Ready", symbol: "checkmark.circle.fill", color: .green)
-                        Text(statusDetail)
-                            .font(.callout)
-                            .foregroundStyle(.secondary)
-                            .lineLimit(1)
                     }
                 }
+
+                notesField
+                    .padding(.top, 4)
             }
 
             Spacer(minLength: 0)
@@ -105,13 +102,6 @@ struct SnippetDetailView: View {
         .padding(.horizontal, inset)
         .padding(.top, 22)
         .padding(.bottom, 18)
-    }
-
-    private var statusDetail: String {
-        var parts = [snippet.mode == .immediate ? "Expands as soon as it's typed" : "Expands after a space or punctuation"]
-        if snippet.matchesAnyCase { parts.append("any capitals") }
-        if !snippet.appBundleIDs.isEmpty { parts.append("only in \(appsTitle)") }
-        return parts.joined(separator: " · ")
     }
 
     // MARK: Editor
@@ -230,7 +220,7 @@ struct SnippetDetailView: View {
 
                 // Spelled out because Binding has its own animation(_:) method.
                 Picker(selection: Binding(get: { snippet.animation }, set: { snippet.animation = $0 })) {
-                    Text("Default (\(state.defaultAnimation.title))").tag(ReplacementAnimation?.none)
+                    Text("Default (\(state.defaultAnimationsTitle))").tag(ReplacementAnimation?.none)
                     Divider()
                     ForEach(ReplacementAnimation.allCases) { style in
                         Label(style.title, systemImage: style.symbol).tag(Optional(style))
@@ -266,22 +256,16 @@ struct SnippetDetailView: View {
 
     // MARK: Notes
 
-    /// Your own notes about the quill. Never typed; searches match them.
+    /// Your own notes about the quill, under its title. Never typed; searches match them.
     private var notesField: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 10) {
-            Image(systemName: "note.text")
-                .foregroundStyle(.secondary)
-                .accessibilityHidden(true)
-            TextField("Notes", text: $snippet.notes, prompt: Text("Add notes: what it's for, where you use it"), axis: .vertical)
-                .textFieldStyle(.plain)
-                .lineLimit(1...5)
-                .font(.callout)
-                .accessibilityLabel("Notes")
-                .accessibilityIdentifier("quill-notes")
-        }
-        .padding(.horizontal, inset)
-        .padding(.vertical, 10)
-        .help("Notes are just for you. They're never typed, and searches match them.")
+        TextField("Notes", text: $snippet.notes, prompt: Text("Add notes: what it's for, where you use it"), axis: .vertical)
+            .textFieldStyle(.plain)
+            .lineLimit(1...4)
+            .font(.callout)
+            .foregroundStyle(.secondary)
+            .accessibilityLabel("Notes")
+            .accessibilityIdentifier("quill-notes")
+            .help("Notes are just for you. They're never typed, and searches match them.")
     }
 
     // MARK: Apps

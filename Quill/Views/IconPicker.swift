@@ -6,6 +6,8 @@ struct IconPicker: View {
     let tint: Color
     /// Shown as a first option that clears the icon, for example "Use Group Icon".
     var defaultTitle: String?
+    /// Shown inside another view (the Edit sheet) rather than as a popover: no Cancel, stays open.
+    var isEmbedded = false
     let onPick: (String?) -> Void
 
     @Environment(\.dismiss) private var dismiss
@@ -20,18 +22,19 @@ struct IconPicker: View {
         var id: String { rawValue }
     }
 
-    init(current: String?, tint: Color, defaultTitle: String? = nil, onPick: @escaping (String?) -> Void) {
+    init(current: String?, tint: Color, defaultTitle: String? = nil, isEmbedded: Bool = false, onPick: @escaping (String?) -> Void) {
         self.current = current
         self.tint = tint
         self.defaultTitle = defaultTitle
+        self.isEmbedded = isEmbedded
         self.onPick = onPick
         _tab = State(initialValue: current.map(IconKind.isEmoji) == true ? .emoji : .symbols)
     }
 
     private var symbols: [(name: String, keywords: String)] {
         let query = search.trimmingCharacters(in: .whitespaces).lowercased()
-        guard !query.isEmpty else { return Self.symbolCatalog }
-        return Self.symbolCatalog.filter { $0.name.contains(query) || $0.keywords.contains(query) }
+        guard !query.isEmpty else { return Self.allSymbols }
+        return Self.allSymbols.filter { $0.name.contains(query) || $0.keywords.contains(query) }
     }
 
     var body: some View {
@@ -48,14 +51,17 @@ struct IconPicker: View {
                     Button(defaultTitle) { choose(nil) }
                         .controlSize(.small)
                 }
-                Button("Cancel") { dismiss() }
-                    .controlSize(.small)
-                    .keyboardShortcut(.cancelAction)
+                if !isEmbedded {
+                    Button("Cancel") { dismiss() }
+                        .controlSize(.small)
+                        .keyboardShortcut(.cancelAction)
+                }
             }
 
             if tab == .symbols {
-                TextField("Search symbols", text: $search)
+                TextField("Search symbols", text: $search, prompt: Text("Search symbols"))
                     .textFieldStyle(.roundedBorder)
+                    .labelsHidden()
                 ScrollView {
                     LazyVGrid(columns: Array(repeating: GridItem(.fixed(40), spacing: 6), count: 8), spacing: 6) {
                         ForEach(symbols, id: \.name) { symbol in
@@ -70,8 +76,9 @@ struct IconPicker: View {
                 }
             } else {
                 HStack(spacing: 8) {
-                    TextField("Type or paste any emoji", text: $typedEmoji)
+                    TextField("Type or paste any emoji", text: $typedEmoji, prompt: Text("Type or paste any emoji"))
                         .textFieldStyle(.roundedBorder)
+                        .labelsHidden()
                         .focused($isEmojiFieldFocused)
                         .onChange(of: typedEmoji) { _, value in
                             if let last = value.last.map(String.init), IconKind.isEmoji(last) { choose(last) }
@@ -94,14 +101,24 @@ struct IconPicker: View {
                 }
             }
         }
-        .padding(16)
-        .frame(width: 392, height: 420)
+        .padding(isEmbedded ? 0 : 16)
+        .frame(width: isEmbedded ? nil : 392, height: isEmbedded ? 330 : 420)
     }
 
     private func choose(_ icon: String?) {
         onPick(icon)
-        dismiss()
+        if !isEmbedded { dismiss() }
     }
+
+    /// The searchable catalogue plus every icon from the Edit sheet's set, keywords from their names.
+    static let allSymbols: [(name: String, keywords: String)] = {
+        var list = symbolCatalog
+        let known = Set(symbolCatalog.map(\.name))
+        for name in IconColorEditor.icons where !known.contains(name) {
+            list.append((name, name.replacingOccurrences(of: ".fill", with: "").replacingOccurrences(of: ".", with: " ")))
+        }
+        return list
+    }()
 
     // MARK: Catalogues
 

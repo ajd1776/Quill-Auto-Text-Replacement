@@ -432,6 +432,21 @@ private struct MainTabBar: View {
             ForEach(leading) { tab($0) }
             newButton
             ForEach(trailing) { tab($0) }
+            Rectangle()
+                .fill(.separator)
+                .frame(width: 1, height: 34)
+                .padding(.horizontal, 4)
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                TabLabel(symbol: "power", title: "Quit")
+                    .foregroundStyle(Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .focusEffectDisabled()
+            .help("Quit Quill")
+            .accessibilityLabel("Quit Quill")
+            .accessibilityIdentifier("tab-quit")
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
