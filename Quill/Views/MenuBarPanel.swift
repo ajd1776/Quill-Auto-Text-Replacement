@@ -300,10 +300,10 @@ struct MenuBarPanel: View {
                 .padding(.horizontal, 4)
             PanelTab(title: "Quit", symbol: "power", help: "Quit Quill") { NSApp.terminate(nil) }
         }
-        .padding(.horizontal, 6)
+        .padding(.horizontal, 14)
         .padding(.vertical, 4)
-        .background(Surface.bar, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .background(Surface.bar, in: Capsule())
+        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
     }
 
     private func show(_ page: AppPage) {
@@ -409,7 +409,7 @@ private struct PanelTab: View {
             VStack(spacing: 3) {
                 Image(systemName: symbol)
                     .font(.system(size: 16, weight: .medium))
-                    .frame(height: 24)
+                    .frame(width: 24, height: 24)
                 Text(title)
                     .font(.system(size: 10, weight: .medium))
                     .lineLimit(1)

@@ -69,22 +69,21 @@ struct SnippetDetailView: View {
             .accessibilityLabel("Change icon and colour")
 
             VStack(alignment: .leading, spacing: 5) {
-                TextField("Shortcut", text: $snippet.trigger, prompt: Text("Shortcut"))
-                    .textFieldStyle(.plain)
-                    .font(.system(size: 28, weight: .bold, design: .monospaced))
-                    .focused($isTriggerFocused)
-                    .autocorrectionDisabled()
-                    .accessibilityLabel("Shortcut")
+                HStack(spacing: 10) {
+                    StatusDot(isOn: state.store.isActive(snippet), help: statusHelp)
+                    TextField("Shortcut", text: $snippet.trigger, prompt: Text("Shortcut"))
+                        .textFieldStyle(.plain)
+                        .font(.system(size: 28, weight: .bold, design: .monospaced))
+                        .focused($isTriggerFocused)
+                        .autocorrectionDisabled()
+                        .accessibilityLabel("Shortcut")
+                }
 
-                HStack(spacing: 8) {
-                    if let problem {
-                        StatusPill(text: problem, symbol: "exclamationmark.triangle.fill", color: .orange)
-                    } else if !state.store.isActive(snippet) {
-                        StatusPill(text: snippet.isEnabled ? "Group \u{201C}\(group?.name ?? "")\u{201D} is off" : "Off",
-                                   symbol: "pause.circle.fill", color: .secondary)
-                    } else {
-                        StatusPill(text: "Ready", symbol: "checkmark.circle.fill", color: .green)
-                    }
+                if let problem {
+                    Label(problem, systemImage: "exclamationmark.triangle.fill")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.orange)
+                        .lineLimit(1)
                 }
 
                 notesField
@@ -102,6 +101,12 @@ struct SnippetDetailView: View {
         .padding(.horizontal, inset)
         .padding(.top, 22)
         .padding(.bottom, 18)
+    }
+
+    private var statusHelp: String {
+        if state.store.isActive(snippet) { return "On: this quill expands" }
+        if snippet.isEnabled { return "Off: group \u{201C}\(group?.name ?? "")\u{201D} is off" }
+        return "Off"
     }
 
     // MARK: Editor
@@ -148,10 +153,12 @@ struct SnippetDetailView: View {
 
                 Spacer()
 
-                Text(countText)
+                Text(countText + " · " + usageText)
                     .font(.caption)
                     .monospacedDigit()
                     .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+                    .help(lastUsedText)
             }
             .padding(.horizontal, inset)
             .padding(.bottom, 8)
@@ -198,60 +205,64 @@ struct SnippetDetailView: View {
     // MARK: Footer
 
     private var footer: some View {
-        VStack(alignment: .leading, spacing: 9) {
-            HStack(spacing: 14) {
-                Picker(selection: $snippet.groupID) {
+        ViewThatFits(in: .horizontal) {
+            optionPills
+            ScrollView(.horizontal, showsIndicators: false) { optionPills }
+        }
+        .padding(.horizontal, inset)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.bar)
+    }
+
+    /// The quill's options as one row of coloured pills, each a menu.
+    private var optionPills: some View {
+        HStack(spacing: 6) {
+            OptionPill(title: group?.name ?? "No Group", symbol: "folder.fill", color: .purple, help: "Group") {
+                Picker("Group", selection: $snippet.groupID) {
                     Text("No Group").tag(SnippetGroup.ID?.none)
                     if !state.store.groups.isEmpty { Divider() }
                     ForEach(state.store.groups) { group in
                         Text(group.name).tag(Optional(group.id))
                     }
-                } label: {
-                    FooterIcon(symbol: "folder", label: "Group")
                 }
-                .fixedSize()
+            }
 
-                Picker(selection: $snippet.mode) {
+            OptionPill(title: snippet.mode.title, symbol: "keyboard.fill", color: .blue, help: "Expands") {
+                Picker("Expands", selection: $snippet.mode) {
                     ForEach(ExpansionMode.allCases) { Text($0.title).tag($0) }
-                } label: {
-                    FooterIcon(symbol: "keyboard", label: "Expands")
                 }
-                .fixedSize()
+            }
 
+            OptionPill(title: snippet.animation?.title ?? "Default (\(state.defaultAnimationsTitle))",
+                       symbol: "sparkles", color: .orange, help: "Effect") {
                 // Spelled out because Binding has its own animation(_:) method.
-                Picker(selection: Binding(get: { snippet.animation }, set: { snippet.animation = $0 })) {
+                Picker("Effect", selection: Binding(get: { snippet.animation }, set: { snippet.animation = $0 })) {
                     Text("Default (\(state.defaultAnimationsTitle))").tag(ReplacementAnimation?.none)
                     Divider()
                     ForEach(ReplacementAnimation.allCases) { style in
                         Label(style.title, systemImage: style.symbol).tag(Optional(style))
                     }
-                } label: {
-                    FooterIcon(symbol: "sparkles", label: "Animation")
                 }
-                .fixedSize()
             }
 
-            HStack(spacing: 16) {
-                appsMenu
+            appsMenu
 
-                Toggle("Match any capitals", isOn: $snippet.matchesAnyCase)
-                    .toggleStyle(.checkbox)
-                    .help("Also expand when typed in other capitals, matching the text's capitals to how you typed it")
-
-                Spacer(minLength: 10)
-
-                Text(usageText)
-                    .font(.callout)
-                    .monospacedDigit()
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .help(lastUsedText)
+            Button {
+                snippet.matchesAnyCase.toggle()
+            } label: {
+                PillLabel(title: "Any capitals",
+                          symbol: snippet.matchesAnyCase ? "checkmark.circle.fill" : "circle",
+                          color: snippet.matchesAnyCase ? .green : .gray, showsChevron: false)
             }
+            .buttonStyle(.plain)
+            .focusEffectDisabled()
+            .help("Also expand when typed in other capitals, matching the text's capitals to how you typed it")
+            .accessibilityLabel("Match any capitals")
+            .accessibilityValue(snippet.matchesAnyCase ? "On" : "Off")
+            .accessibilityAddTraits(snippet.matchesAnyCase ? [.isSelected, .isButton] : .isButton)
         }
-        .padding(.horizontal, inset)
-        .padding(.vertical, 11)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.bar)
+        .fixedSize()
     }
 
     // MARK: Notes
@@ -309,10 +320,16 @@ struct SnippetDetailView: View {
             Divider()
             Button("Choose App…", action: chooseApp)
         } label: {
-            Label(appsTitle, systemImage: snippet.appBundleIDs.isEmpty ? "macwindow.on.rectangle" : "app.badge.checkmark")
+            PillLabel(title: appsTitle, symbol: snippet.appBundleIDs.isEmpty ? "macwindow.on.rectangle" : "app.badge.checkmark",
+                      color: .yellow)
         }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .focusEffectDisabled()
         .fixedSize()
         .help("Limit this quill to certain apps")
+        .accessibilityLabel("Apps")
     }
 
     private func chooseApp() {
@@ -345,32 +362,75 @@ struct SnippetDetailView: View {
     }
 }
 
-/// Small coloured capsule for the snippet's status.
-private struct StatusPill: View {
-    let text: String
-    let symbol: String
-    let color: Color
+/// Green when the quill expands, red when it's off.
+private struct StatusDot: View {
+    let isOn: Bool
+    let help: String
 
     var body: some View {
-        Label(text, systemImage: symbol)
-            .font(.callout.weight(.semibold))
-            .foregroundStyle(color)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(color.opacity(0.14), in: Capsule())
-            .lineLimit(1)
+        Circle()
+            .fill(isOn ? Color.green : Color.red)
+            .frame(width: 10, height: 10)
+            .help(help)
+            .accessibilityElement()
+            .accessibilityLabel(isOn ? "On" : "Off")
+            .accessibilityIdentifier("quill-status")
     }
 }
 
-private struct FooterIcon: View {
+/// A tinted capsule: coloured symbol and text on a faint wash of the same colour.
+struct PillLabel: View {
+    let title: String
     let symbol: String
-    let label: String
+    let color: Color
+    var showsChevron = true
 
     var body: some View {
-        Image(systemName: symbol)
-            .foregroundStyle(.secondary)
-            .accessibilityLabel(label)
-            .help(label)
+        HStack(spacing: 5) {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 14, height: 14)
+            Text(title)
+                .font(.system(size: 12, weight: .semibold))
+                .lineLimit(1)
+            if showsChevron {
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 9, weight: .bold))
+                    .opacity(0.8)
+            }
+        }
+        .foregroundStyle(color)
+        .padding(.horizontal, 10)
+        .frame(height: 26)
+        .background(color.opacity(0.14), in: Capsule())
+        .overlay(Capsule().strokeBorder(color.opacity(0.22), lineWidth: 0.5))
+        .contentShape(Capsule())
+    }
+}
+
+/// A coloured pill that opens a menu of choices.
+private struct OptionPill<Content: View>: View {
+    let title: String
+    let symbol: String
+    let color: Color
+    let help: String
+    @ViewBuilder let content: () -> Content
+
+    var body: some View {
+        Menu {
+            content()
+                .pickerStyle(.inline)
+        } label: {
+            PillLabel(title: title, symbol: symbol, color: color)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .focusEffectDisabled()
+        .fixedSize()
+        .help(help)
+        .accessibilityLabel(help)
+        .accessibilityValue(title)
     }
 }
 

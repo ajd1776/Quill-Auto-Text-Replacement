@@ -379,7 +379,7 @@ private struct HeaderSymbol: View {
         Image(systemName: name)
             .font(.system(size: 13, weight: .regular))
             .foregroundStyle(Color(nsColor: .labelColor))
-            .frame(width: 26, height: 24)
+            .frame(width: 26, height: 26)
             .contentShape(Rectangle())
     }
 }
@@ -420,10 +420,10 @@ private struct MainTabBar: View {
             .accessibilityLabel("Quit Quill")
             .accessibilityIdentifier("tab-quit")
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 22)
         .padding(.vertical, 6)
-        .background(Surface.bar, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(.separator, lineWidth: 0.5))
+        .background(Surface.bar, in: Capsule())
+        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
         .padding(.top, 8)
         .padding(.bottom, 12)
         .fixedSize()
@@ -453,9 +453,9 @@ private struct MainTabBar: View {
         } label: {
             VStack(spacing: 4) {
                 Image(systemName: "plus")
-                    .font(.system(size: 15, weight: .bold))
+                    .font(.system(size: 14, weight: .bold))
                     .foregroundStyle(.white)
-                    .frame(width: 30, height: 30)
+                    .frame(width: 28, height: 28)
                     .background(Color.accentColor, in: Circle())
                 Text("New")
                     .font(.system(size: 11, weight: .medium))
@@ -519,7 +519,7 @@ struct TabLabel: View {
         VStack(spacing: 4) {
             Image(systemName: symbol)
                 .font(.system(size: 20, weight: .medium))
-                .frame(height: 24)
+                .frame(width: 28, height: 28)
             Text(title)
                 .font(.system(size: 11, weight: .medium))
         }
@@ -800,7 +800,7 @@ private struct AccessCallout: View {
             Image(systemName: "hand.raised.fill")
                 .font(.title2)
                 .foregroundStyle(.orange)
-                .frame(width: 26)
+                .frame(width: 26, height: 26)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 6) {
                 Text("Quill Is Off")
