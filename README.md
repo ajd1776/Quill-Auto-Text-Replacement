@@ -37,13 +37,15 @@ The most useful first:
 - **On and off in place.** Every quill and group has its own switch in the sidebar, and Quill itself turns off or pauses from the menu bar (<kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>P</kbd>).
 - **Menu bar panel.** Search your quills, filter by group, switch them on and off, or click one to type it where you were typing. A tab bar along the bottom jumps to any page, or quits Quill.
 - **Firing Range.** A practice page where your quills fire for real, with a clickable cheat sheet, a hit counter and an effect to try. Practice never counts towards your stats.
-- **Groups, icons and colours.** Collapsible groups, 126 SF Symbols or any emoji, the system colours and your own saved colours, set in one sheet.
+- **One Edit sheet.** Shortcut, text, notes, group, colour and icon for any quill in one place: right-click › Edit…, double-click, or New. Search hundreds of SF Symbols or pick any emoji, with the system colours and your own saved colours.
+- **Notes on every quill.** Jot down what a quill is for under its title; searches match notes too.
+- **Collapsible groups.** Each with its own icon, colour and on/off switch.
 - **Drag to reorder.** Rearrange quills, move them between groups and reorder groups by dragging.
 - **Bring your quills.** Import your macOS Text Replacements, or add a starter pack: emoji shortcodes (`:fire:` → 🔥), typo fixes (`teh` → `the`) and date formats (`;dmy` → `18/11/2026`).
-- **Fine control.** Limit a quill to certain apps, pause Quill in an app, match capitals (`EML` → ALL CAPS), keep or drop the space after an expansion, and press Delete straight after one to undo it.
+- **Fine control.** Limit a quill to certain apps, pause Quill in an app, match capitals (`EML` → ALL CAPS), drop the space after an expansion (the default) or keep it, and press Delete straight after one to undo it.
 - **Stats and History.** Keys and time saved, your streak, busiest hours, top apps and quills, a Tidy Up list, and a searchable log of recent expansions.
-- **13 effects.** Pop Badge, Typewriter, Highlight, Ink Underline, Confetti, Sparkle, Cyber and more, drawn over the text and respecting Reduce Motion.
-- **One window.** Your quills stay in the sidebar, and a floating tab bar switches the right-hand side between the editor, Stats, History, the Firing Range and Settings.
+- **13 effects, combinable.** Pop Badge, Typewriter, Highlight, Ink Underline, Confetti, Sparkle, Cyber and more, drawn over the text and respecting Reduce Motion. Choose several and they play together.
+- **One window.** Your quills stay in the sidebar, and a floating tab bar switches the right-hand side between the editor, Stats, History, the Firing Range and Settings, with New and Quit.
 - **Keyboard first.** <kbd>⌘</kbd> <kbd>K</kbd> command palette, a global search hotkey, `quill://` links to any page, and Shortcuts app actions (Insert Quill, Get Quill Text, Add Quill, Turn Quill On/Off).
 - **Private and local.** One JSON file on your Mac with daily backups and JSON import and export. Password fields are never seen. The only network request is a daily update check against GitHub Releases.
 
@@ -61,9 +63,9 @@ The most useful first:
 
 ## Screenshots
 
-| Quills and editor | Icon and Colour |
+| Quills and editor | Edit sheet |
 | --- | --- |
-| ![The sidebar with collapsible groups and on/off switches, and the editor open for thx](docs/screenshots/snippets.png) | ![The Icon and Colour sheet: name, system colours, custom colour and a grid of icons](docs/screenshots/appearance.png) |
+| ![The sidebar with collapsible groups and on/off switches, and the editor open for thx](docs/screenshots/snippets.png) | ![The Edit sheet: shortcut, group, text, notes, colours and a searchable icon browser](docs/screenshots/appearance.png) |
 
 | Stats | Firing Range |
 | --- | --- |
@@ -80,7 +82,7 @@ The most useful first:
 ## How to use it
 
 1. Open Quill and allow Accessibility access.
-2. Click **New** in the tab bar, type a shortcut such as `eml`, pick a colour and icon, then type the text it should become.
+2. Click **New** in the tab bar, type a shortcut such as `eml` and the text it should become, then pick a colour and icon.
 3. Type `eml` followed by a space in any app.
 
 | Shortcut | Action |
@@ -154,13 +156,13 @@ xcodebuild -project Quill.xcodeproj -scheme Quill -configuration Debug \
 xcodebuild test -project Quill.xcodeproj -scheme Quill -destination 'platform=macOS' -derivedDataPath build.noindex
 ```
 
-Runs the unit tests (`QuillTests`: tokens, case matching, store, moves and ordering, colours, stats, history filters, pages and links, the engine self-test) and the UI tests (`QuillUITests`: the tab bar, switches, collapsing, drag to reorder, Icon and Colour, the editor, search, Settings, the Firing Range and the welcome tour). The UI tests drive the mouse and keyboard for about two minutes. Both use the in-memory demo library, never your real quills, and Debug builds use their own bundle ID (`dev.quill.Quill.debug`), so testing doesn't touch the installed app's settings.
+Runs the unit tests (`QuillTests`: tokens, case matching, store, moves and ordering, colours, stats, history filters, pages and links, the engine self-test) and the UI tests (`QuillUITests`: the tab bar, switches, collapsing, drag to reorder, the Edit sheet, the editor, search, Settings, the Firing Range and the welcome tour). The UI tests drive the mouse and keyboard for about three minutes. Both use the in-memory demo library, never your real quills, and Debug builds use their own bundle ID (`dev.quill.Quill.debug`), so testing doesn't touch the installed app's settings.
 
 Debug-only launch arguments:
 
 - `-QuillSelfTest`: engine and model self-test.
 - `-QuillDemoData`: in-memory sample library, never saved.
-- `-QuillDemo <view>`: opens `library`, `stats`, `history`, `range`, `editor`, `appearance`, `newsnippet`, `panel`, `palette`, `welcome` (with `-QuillWelcomeStep 0`–`3`), a settings pane, `bubble`, `fillin`, or plays an effect by name.
+- `-QuillDemo <view>`: opens `library`, `stats`, `history`, `range`, `editor`, `editquill`, `appearance`, `newsnippet`, `panel`, `palette`, `welcome` (with `-QuillWelcomeStep 0`–`3`), a settings pane, `bubble`, `fillin`, or plays an effect by name.
 - `-QuillDemo stage:<scene>`: plays a scripted scene for the README recordings: `hero`, `bubble`, `fillin`, `effects`, `panel` or `tour`. It prints the screen area to record.
 - `-QuillUpdateCheck`: one live update check, then quits. `-QuillFakeUpdate` simulates an available update.
 

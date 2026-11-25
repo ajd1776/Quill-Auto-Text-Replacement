@@ -102,6 +102,12 @@ private struct MenuBarLabel: View {
                 if let pick = snippets.first(where: { $0.trigger == "thx" || $0.trigger == "eAD" }) ?? snippets.first {
                     state.selection = [.snippet(pick.id)]
                 }
+            case "editquill":
+                openWindow(id: WindowID.library)
+                if let quill = state.store.snippets.first(where: { $0.trigger == "thx" }) ?? state.store.snippets.first {
+                    state.store.update(quill.id) { $0.notes = "Order confirmation for shop customers" }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { state.appearanceTarget = .snippet(quill.id) }
+                }
             case "appearance":
                 openWindow(id: WindowID.library)
                 if let group = state.store.groups.first {
