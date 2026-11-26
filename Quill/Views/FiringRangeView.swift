@@ -90,8 +90,7 @@ struct FiringRangeView: View {
                 .scrollContentBackground(.hidden)
                 .padding(10)
                 .focused($isTyping)
-                .background(Surface.editor, in: RoundedRectangle(cornerRadius: 10))
-                .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(.separator))
+                .background(Surface.editor, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(alignment: .topLeading) {
                     if text.isEmpty {
                         Text("Type a shortcut, such as \(state.store.activeSnippets.first?.trigger ?? "eml"), then a space.")

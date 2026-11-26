@@ -428,8 +428,7 @@ private struct MainTabBar: View {
         }
         .padding(.horizontal, 22)
         .padding(.vertical, 6)
-        .background(Surface.bar, in: Capsule())
-        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        .floatingBar()
         .padding(.top, 8)
         .padding(.bottom, 12)
         .fixedSize()
@@ -815,8 +814,7 @@ private struct SidebarSummary: View {
             .padding(.horizontal, 14)
             .frame(height: 34)
             // A floating capsule like the tab bar, opaque so the list never shows through the text.
-            .background(Surface.bar, in: Capsule())
-            .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+            .floatingBar()
             .padding(.horizontal, 10)
             .padding(.bottom, 10)
             .padding(.top, 4)

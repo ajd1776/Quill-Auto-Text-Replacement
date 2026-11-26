@@ -68,8 +68,7 @@ private struct SettingsTabBar: View {
             }
         }
         .padding(4)
-        .background(Surface.bar, in: Capsule())
-        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        .floatingBar()
         .accessibilityElement(children: .contain)
         .accessibilityLabel("Settings tabs")
     }

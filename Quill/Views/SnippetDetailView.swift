@@ -23,12 +23,10 @@ struct SnippetDetailView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             header
-            Divider().padding(.horizontal, inset)
             editorArea
             if TokenRenderer.containsTokens(snippet.expansion) {
                 tokenPreview
             }
-            Divider()
             footer
         }
         .background(Surface.editor)
@@ -130,8 +128,8 @@ struct SnippetDetailView: View {
             }
         }
         .padding(.horizontal, inset)
-        .padding(.top, 22)
-        .padding(.bottom, 18)
+        .padding(.top, 26)
+        .padding(.bottom, 10)
     }
 
     private var statusHelp: String {
@@ -220,9 +218,11 @@ struct SnippetDetailView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .padding(.horizontal, inset)
+        .padding(.horizontal, 14)
         .padding(.vertical, 10)
-        .background(tint.opacity(0.07))
+        .background(tint.opacity(0.09), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .padding(.horizontal, inset - 14)
+        .padding(.bottom, 4)
     }
 
     /// Shows where {cursor} will leave the cursor with a bar.
@@ -241,9 +241,9 @@ struct SnippetDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) { optionPills }
         }
         .padding(.horizontal, inset)
-        .padding(.vertical, 12)
+        .padding(.top, 8)
+        .padding(.bottom, 14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.bar)
     }
 
     /// The quill's options as one row of coloured pills, each a menu.
@@ -439,7 +439,7 @@ struct PillLabel: View {
         .padding(.horizontal, 10)
         .frame(height: 26)
         .background(color.opacity(isSelected ? 0.45 : 0.24), in: Capsule())
-        .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.3), lineWidth: isSelected ? 1.5 : 0.5))
+        .overlay { if isSelected { Capsule().strokeBorder(color.opacity(0.9), lineWidth: 1.5) } }
         .contentShape(Capsule())
     }
 }

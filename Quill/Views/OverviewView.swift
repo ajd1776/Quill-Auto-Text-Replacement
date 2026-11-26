@@ -17,17 +17,18 @@ struct OverviewView: View {
             VStack(alignment: .leading, spacing: 18) {
                 header
 
-                LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 12)], spacing: 12) {
-                    StatTile(title: "Keys Saved", value: store.totalKeysSaved.formatted(),
-                             detail: "About \(QuillStats.durationText(QuillStats.timeSaved(keys: store.totalKeysSaved))) of typing",
-                             symbol: "keyboard", color: .purple)
-                    StatTile(title: "Expansions", value: periodUses.formatted(),
-                             detail: "in \(period) days · \(store.totalUses.formatted()) in all", symbol: "text.insert", color: .blue)
-                    StatTile(title: "Streak", value: streakText,
-                             detail: "Best day: \(QuillStats.bestDay(store.dailyUses).formatted()) expansions", symbol: "flame", color: .orange)
-                    StatTile(title: "Quills On", value: store.activeSnippets.count.formatted(),
-                             detail: "of \(store.snippets.count) · \(store.groups.count) \(store.groups.count == 1 ? "group" : "groups")",
-                             symbol: "checkmark.circle", color: .green)
+                // Rows are always full: all four on one row, or two rows of two when narrow.
+                ViewThatFits(in: .horizontal) {
+                    HStack(spacing: 12) {
+                        keysTile
+                        usesTile
+                        streakTile
+                        quillsOnTile
+                    }
+                    Grid(horizontalSpacing: 12, verticalSpacing: 12) {
+                        GridRow { keysTile; usesTile }
+                        GridRow { streakTile; quillsOnTile }
+                    }
                 }
 
                 Card(title: "Expansions per Day", subtitle: "Last \(period) days") {
@@ -67,6 +68,35 @@ struct OverviewView: View {
     }
 
     // MARK: Header
+
+    // MARK: Tiles
+
+    private var keysTile: some View {
+        StatTile(title: "Keys Saved", value: store.totalKeysSaved.formatted(),
+                 detail: "About \(QuillStats.durationText(QuillStats.timeSaved(keys: store.totalKeysSaved))) of typing",
+                 symbol: "keyboard", color: .purple)
+            .frame(minWidth: 180, maxWidth: .infinity)
+    }
+
+    private var usesTile: some View {
+        let periodUses = QuillStats.days(period, from: store.dailyUses).reduce(0) { $0 + $1.uses }
+        return StatTile(title: "Expansions", value: periodUses.formatted(),
+                 detail: "in \(period) days · \(store.totalUses.formatted()) in all", symbol: "text.insert", color: .blue)
+            .frame(minWidth: 180, maxWidth: .infinity)
+    }
+
+    private var streakTile: some View {
+        StatTile(title: "Streak", value: streakText,
+                 detail: "Best day: \(QuillStats.bestDay(store.dailyUses).formatted()) expansions", symbol: "flame", color: .orange)
+            .frame(minWidth: 180, maxWidth: .infinity)
+    }
+
+    private var quillsOnTile: some View {
+        StatTile(title: "Quills On", value: store.activeSnippets.count.formatted(),
+                 detail: "of \(store.snippets.count) · \(store.groups.count) \(store.groups.count == 1 ? "group" : "groups")",
+                 symbol: "checkmark.circle", color: .green)
+            .frame(minWidth: 180, maxWidth: .infinity)
+    }
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {

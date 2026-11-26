@@ -18,9 +18,27 @@ extension View {
         modifier(GlassSurface(shape: shape))
     }
 
+    /// The floating capsule bars (tab bars, the sidebar footer): Liquid Glass on macOS 26 and
+    /// later, a solid bar with a hairline before.
+    func floatingBar() -> some View {
+        modifier(FloatingBar())
+    }
+
     /// Tells AppState when a window opens and closes, so Quill can show or hide its Dock icon.
     func tracksWindow(_ id: String) -> some View {
         modifier(WindowTracker(id: id))
+    }
+}
+
+private struct FloatingBar: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular, in: Capsule())
+        } else {
+            content
+                .background(Surface.bar, in: Capsule())
+                .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        }
     }
 }
 

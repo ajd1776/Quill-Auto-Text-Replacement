@@ -67,8 +67,6 @@ struct MenuBarPanel: View {
             chips
                 .padding(.vertical, 8)
 
-            Divider()
-
             if snippets.isEmpty {
                 ContentUnavailableView {
                     Label(store.snippets.isEmpty ? "No Quills" : "No Matches", systemImage: "text.magnifyingglass")
@@ -92,8 +90,6 @@ struct MenuBarPanel: View {
                 .transaction { $0.animation = nil }
                 .frame(height: 330)
             }
-
-            Divider()
 
             footer
                 .padding(.horizontal, 10)
@@ -260,7 +256,6 @@ struct MenuBarPanel: View {
         .padding(.horizontal, 12)
         .frame(height: 32)
         .background(Surface.card, in: Capsule())
-        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
     }
 
     private var chips: some View {
@@ -318,8 +313,7 @@ struct MenuBarPanel: View {
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 4)
-        .background(Surface.bar, in: Capsule())
-        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+        .floatingBar()
     }
 
     private func show(_ page: AppPage) {
@@ -417,7 +411,7 @@ private struct Chip: View {
             .padding(.horizontal, 10)
             .frame(height: 26)
             .background(color.opacity(isSelected ? 0.45 : 0.22), in: Capsule())
-            .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.22), lineWidth: isSelected ? 1.5 : 0.5))
+            .overlay { if isSelected { Capsule().strokeBorder(color.opacity(0.9), lineWidth: 1.5) } }
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
