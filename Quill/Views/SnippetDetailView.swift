@@ -249,15 +249,7 @@ struct SnippetDetailView: View {
     /// The quill's options as one row of coloured pills, each a menu.
     private var optionPills: some View {
         HStack(alignment: .bottom, spacing: 6) {
-            OptionPill(title: group?.name ?? "No Group", symbol: "folder.fill", color: .purple, help: "The group this quill belongs to") {
-                Picker("Group", selection: $snippet.groupID) {
-                    Text("No Group").tag(SnippetGroup.ID?.none)
-                    if !state.store.groups.isEmpty { Divider() }
-                    ForEach(state.store.groups) { group in
-                        Text(group.name).tag(Optional(group.id))
-                    }
-                }
-            }
+            GroupPillPicker(groupID: $snippet.groupID)
             .pillCaption("Group")
 
             OptionPill(title: snippet.mode.title, symbol: "keyboard.fill", color: .blue, help: "When the shortcut expands as you type") {
@@ -436,27 +428,117 @@ struct PillLabel: View {
     let symbol: String
     let color: Color
     var showsChevron = true
+    var isSelected = false
 
     var body: some View {
         HStack(spacing: 5) {
-            Image(systemName: symbol)
-                .font(.system(size: 11, weight: .semibold))
-                .frame(width: 14, height: 14)
+            PillSymbol(symbol: symbol)
             Text(title)
                 .font(.system(size: 12, weight: .semibold))
+                // White text so every colour stays readable; the symbol carries the colour.
+                .foregroundStyle(Color(.sRGB, white: 1, opacity: 1))
                 .lineLimit(1)
             if showsChevron {
                 Image(systemName: "chevron.down")
                     .font(.system(size: 9, weight: .bold))
-                    .opacity(0.8)
+                    .foregroundStyle(Color(.sRGB, white: 1, opacity: 0.7))
             }
         }
         .foregroundStyle(color)
         .padding(.horizontal, 10)
         .frame(height: 26)
-        .background(color.opacity(0.14), in: Capsule())
-        .overlay(Capsule().strokeBorder(color.opacity(0.22), lineWidth: 0.5))
+        .background(color.opacity(isSelected ? 0.45 : 0.24), in: Capsule())
+        .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.3), lineWidth: isSelected ? 1.5 : 0.5))
         .contentShape(Capsule())
+    }
+}
+
+/// An SF Symbol or an emoji at pill size.
+private struct PillSymbol: View {
+    let symbol: String
+
+    var body: some View {
+        if IconKind.isEmoji(symbol) {
+            Text(symbol).font(.system(size: 11))
+        } else {
+            Image(systemName: symbol)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 14, height: 14)
+        }
+    }
+}
+
+/// The Group option: a pill in the group's own colour and icon that opens a list of every
+/// group as the same coloured pills, instead of a plain menu.
+private struct GroupPillPicker: View {
+    @Binding var groupID: SnippetGroup.ID?
+    @Environment(AppState.self) private var state
+    @State private var isOpen = false
+
+    private static let noGroupColor = Color.gray
+    private static let noGroupSymbol = "tray"
+
+    private var group: SnippetGroup? { groupID.flatMap(state.store.group) }
+
+    var body: some View {
+        Button {
+            isOpen.toggle()
+        } label: {
+            PillLabel(title: group?.name ?? "No Group", symbol: group?.symbol ?? Self.noGroupSymbol,
+                      color: group?.tint ?? Self.noGroupColor)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .fixedSize()
+        .help("The group this quill belongs to")
+        .accessibilityLabel("Group")
+        .accessibilityValue(group?.name ?? "No Group")
+        .popover(isPresented: $isOpen, arrowEdge: .top) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text("Group")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                    .padding(.leading, 4)
+                    .padding(.bottom, 2)
+                choice(nil, title: "No Group", symbol: Self.noGroupSymbol, color: Self.noGroupColor)
+                if !state.store.groups.isEmpty { Divider().padding(.vertical, 2) }
+                ForEach(state.store.groups) { group in
+                    choice(group.id, title: group.name, symbol: group.symbol, color: group.tint)
+                }
+            }
+            .padding(12)
+            .frame(minWidth: 220, alignment: .leading)
+        }
+        #if DEBUG
+        .onAppear {
+            // Screenshots of the open list: -QuillDemoGroupPicker.
+            if CommandLine.arguments.contains("-QuillDemoGroupPicker") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { isOpen = true }
+            }
+        }
+        #endif
+    }
+
+    private func choice(_ id: SnippetGroup.ID?, title: String, symbol: String, color: Color) -> some View {
+        let isCurrent = groupID == id
+        return Button {
+            groupID = id
+            isOpen = false
+        } label: {
+            HStack(spacing: 8) {
+                PillLabel(title: title, symbol: symbol, color: color, showsChevron: false, isSelected: isCurrent)
+                Spacer(minLength: 12)
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(.secondary)
+                    .opacity(isCurrent ? 1 : 0)
+            }
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
     }
 }
 
