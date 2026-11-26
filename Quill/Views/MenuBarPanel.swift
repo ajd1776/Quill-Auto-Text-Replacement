@@ -409,12 +409,14 @@ private struct Chip: View {
                 }
                 Text(title)
                     .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(.sRGB, white: 1, opacity: 1))
                     .lineLimit(1)
             }
+            // The icon keeps the group's colour; the text is white so every colour stays readable.
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .frame(height: 26)
-            .background(color.opacity(isSelected ? 0.28 : 0.12), in: Capsule())
+            .background(color.opacity(isSelected ? 0.45 : 0.22), in: Capsule())
             .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.22), lineWidth: isSelected ? 1.5 : 0.5))
             .contentShape(Capsule())
         }
