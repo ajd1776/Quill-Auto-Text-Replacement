@@ -259,17 +259,8 @@ struct SnippetDetailView: View {
             }
             .pillCaption("Expands")
 
-            OptionPill(title: snippet.animation?.title ?? "Default (\(state.defaultAnimationsTitle))",
-                       symbol: "sparkles", color: .orange, help: "The effect that plays when it expands") {
-                // Spelled out because Binding has its own animation(_:) method.
-                Picker("Effect", selection: Binding(get: { snippet.animation }, set: { snippet.animation = $0 })) {
-                    Text("Default (\(state.defaultAnimationsTitle))").tag(ReplacementAnimation?.none)
-                    Divider()
-                    ForEach(ReplacementAnimation.allCases) { style in
-                        Label(style.title, systemImage: style.symbol).tag(Optional(style))
-                    }
-                }
-            }
+            EffectPillPicker(animation: Binding(get: { snippet.animation }, set: { snippet.animation = $0 }),
+                             trigger: snippet.trigger, expansion: snippet.expansion)
             .pillCaption("Effect")
 
             appsMenu
@@ -450,6 +441,143 @@ struct PillLabel: View {
         .background(color.opacity(isSelected ? 0.45 : 0.24), in: Capsule())
         .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.3), lineWidth: isSelected ? 1.5 : 0.5))
         .contentShape(Capsule())
+    }
+}
+
+/// The Effect option: opens a gallery where every effect plays a small live preview, instead of
+/// a menu of names. Tiles play one after another when it opens and replay on hover.
+private struct EffectPillPicker: View {
+    @Binding var animation: ReplacementAnimation?
+    let trigger: String
+    let expansion: String
+    @Environment(AppState.self) private var state
+    @State private var isOpen = false
+
+    private var defaultTitle: String { "Default (\(state.defaultAnimationsTitle))" }
+    /// Every effect but None, which sits beside Default on the top row: 12, so the rows are full.
+    private var effects: [ReplacementAnimation] { ReplacementAnimation.allCases.filter { $0 != .instant } }
+
+    var body: some View {
+        Button {
+            isOpen.toggle()
+        } label: {
+            PillLabel(title: animation?.title ?? defaultTitle, symbol: animation?.symbol ?? "sparkles", color: .orange)
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .fixedSize()
+        .help("The effect that plays when it expands")
+        .accessibilityLabel("Effect")
+        .accessibilityValue(animation?.title ?? defaultTitle)
+        .popover(isPresented: $isOpen, arrowEdge: .top) { gallery }
+        #if DEBUG
+        .onAppear {
+            if CommandLine.arguments.contains("-QuillDemoEffectPicker") {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) { isOpen = true }
+            }
+        }
+        #endif
+    }
+
+    private var gallery: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Effect")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Text("Hover to replay")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
+            }
+            .padding(.horizontal, 2)
+
+            HStack(spacing: 10) {
+                tile(nil, title: defaultTitle, symbol: "sparkles", styles: state.defaultAnimations, delay: 0)
+                tile(.instant, title: ReplacementAnimation.instant.title, symbol: ReplacementAnimation.instant.symbol,
+                     styles: [.instant], delay: 0.1)
+            }
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 10) {
+                ForEach(Array(effects.enumerated()), id: \.element) { index, effect in
+                    tile(effect, title: effect.title, symbol: effect.symbol, styles: [effect], delay: 0.2 + Double(index) * 0.12)
+                }
+            }
+        }
+        .padding(14)
+        .frame(width: 640)
+    }
+
+    private func tile(_ value: ReplacementAnimation?, title: String, symbol: String,
+                      styles: [ReplacementAnimation], delay: Double) -> some View {
+        EffectTile(title: title, symbol: symbol, styles: styles, isCurrent: animation == value, delay: delay,
+                   trigger: sampleTrigger, expansion: sampleText, speed: state.typewriterSpeed) {
+            animation = value
+            isOpen = false
+        }
+    }
+
+    /// The quill's own shortcut and text, short enough for a small tile.
+    private var sampleTrigger: String { trigger.isEmpty ? "thx" : String(trigger.prefix(8)) }
+    private var sampleText: String {
+        let firstLine = expansion.split(separator: "\n").first.map(String.init) ?? ""
+        let text = TokenRenderer.render(firstLine, clipboard: "").text
+        return text.isEmpty ? "Thanks!" : String(text.prefix(14))
+    }
+}
+
+private struct EffectTile: View {
+    let title: String
+    let symbol: String
+    let styles: [ReplacementAnimation]
+    let isCurrent: Bool
+    let delay: Double
+    let trigger: String
+    let expansion: String
+    let speed: Double
+    let choose: () -> Void
+    @State private var replay = 0
+    @State private var isHovering = false
+
+    var body: some View {
+        Button(action: choose) {
+            VStack(alignment: .leading, spacing: 6) {
+                AnimationPreview(styles: styles, speed: speed, trigger: trigger, expansion: expansion,
+                                 reduceMotion: false, height: 74, prefix: "", compact: true,
+                                 startDelay: delay, replayToken: replay)
+                HStack(spacing: 5) {
+                    Image(systemName: symbol)
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.orange)
+                        .frame(width: 14, height: 14)
+                    Text(title)
+                        .font(.system(size: 12, weight: .semibold))
+                        .lineLimit(1)
+                    Spacer(minLength: 0)
+                    if isCurrent {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundStyle(Color.accentColor)
+                    }
+                }
+            }
+            .padding(10)
+            .background(isHovering ? Color.primary.opacity(0.1) : Color.primary.opacity(0.05),
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .strokeBorder(isCurrent ? Color.accentColor : Color.primary.opacity(0.08), lineWidth: isCurrent ? 2 : 0.5)
+            }
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .focusEffectDisabled()
+        .onHover { hovering in
+            isHovering = hovering
+            if hovering { replay += 1 }
+        }
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isCurrent ? [.isSelected, .isButton] : .isButton)
     }
 }
 

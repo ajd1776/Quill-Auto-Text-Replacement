@@ -14,6 +14,12 @@ struct AnimationPreview: View {
     var height: CGFloat = 150
     /// Text before the shortcut in the mock field.
     var prefix = "Email me at "
+    /// A small version for the effect gallery: smaller text and field, no replay button.
+    var compact = false
+    /// Waits this long before the first play, so a gallery of previews starts one after another.
+    var startDelay: Double = 0
+    /// Changing it replays the preview (the gallery replays a tile on hover).
+    var replayToken = 0
 
     @State private var shown = ""
     @State private var effects: [ReplacementAnimation] = []
@@ -35,17 +41,17 @@ struct AnimationPreview: View {
                         .onGeometryChange(for: CGRect.self) { $0.frame(in: .named(Self.space)) } action: { textFrame = $0 }
                     Rectangle()
                         .fill(.tint)
-                        .frame(width: 2, height: 18)
+                        .frame(width: 2, height: compact ? 14 : 18)
                     Spacer(minLength: 0)
                 }
-                .font(.system(size: 15))
-                .padding(.horizontal, 14)
-                .frame(height: 40)
-                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .font(.system(size: fontSize))
+                .padding(.horizontal, compact ? 9 : 14)
+                .frame(height: compact ? 28 : 40)
+                .background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: compact ? 9 : 8, style: .continuous))
                 .overlay {
-                    RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(.separator)
+                    RoundedRectangle(cornerRadius: compact ? 9 : 8, style: .continuous).strokeBorder(.separator)
                 }
-                Spacer(minLength: 0).frame(height: 34)
+                Spacer(minLength: 0).frame(height: compact ? 8 : 34)
             }
 
             ForEach(effects, id: \.self) { effect in
@@ -54,7 +60,7 @@ struct AnimationPreview: View {
                     caret: CGPoint(x: textFrame.maxX + 1, y: textFrame.midY),
                     text: expansion,
                     trigger: trigger,
-                    fontSize: 15,
+                    fontSize: fontSize,
                     reduceMotion: reduceMotion
                 ))
                 .id("\(effect.rawValue)-\(effectID)")
@@ -64,12 +70,15 @@ struct AnimationPreview: View {
         .coordinateSpace(.named(Self.space))
         .frame(height: height)
         .overlay(alignment: .topTrailing) {
-            Button("Replay Preview", systemImage: "arrow.counterclockwise", action: play)
-                .labelStyle(.iconOnly)
-                .buttonStyle(.borderless)
-                .help("Replay Preview")
+            if !compact {
+                Button("Replay Preview", systemImage: "arrow.counterclockwise", action: play)
+                    .labelStyle(.iconOnly)
+                    .buttonStyle(.borderless)
+                    .help("Replay Preview")
+            }
         }
-        .onAppear(perform: play)
+        .onAppear { play(after: startDelay) }
+        .onChange(of: replayToken) { play() }
         .onChange(of: styles) { play() }
         .onChange(of: reduceMotion) { play() }
         .onDisappear { task?.cancel() }
@@ -77,12 +86,16 @@ struct AnimationPreview: View {
         .accessibilityLabel("Preview of \(styles.map(\.title).joined(separator: " and "))")
     }
 
-    private func play() {
+    private var fontSize: CGFloat { compact ? 12 : 15 }
+
+    private func play() { play(after: 0) }
+
+    private func play(after delay: Double) {
         task?.cancel()
         task = Task { @MainActor in
             shown = ""
             effects = []
-            try? await Task.sleep(for: .milliseconds(350))
+            try? await Task.sleep(for: .milliseconds(350 + Int(delay * 1000)))
             for character in trigger {
                 guard !Task.isCancelled else { return }
                 shown.append(character)
