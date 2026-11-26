@@ -721,7 +721,7 @@ private struct SnippetRow: View {
 /// A snippet's icon in a small rounded square, tinted with its group's colour.
 /// A quill's on/off switch in the sidebar. On a selected (blue) row the blue track would vanish,
 /// so it gets a white outline there. Its own view, so it sees the row's selection.
-private struct RowSwitch: View {
+struct RowSwitch: View {
     let title: String
     @Binding var isOn: Bool
     @Environment(\.backgroundProminence) private var prominence

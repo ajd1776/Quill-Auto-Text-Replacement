@@ -34,8 +34,8 @@ final class KeyboardEmitter {
         }
     }
 
-    func insert(_ text: String) {
-        if text.count > pasteThreshold {
+    func insert(_ text: String, pasting: Bool = false) {
+        if pasting || text.count > pasteThreshold {
             paste(text)
         } else {
             steps(for: text, oneCharacterEach: false).forEach(post)

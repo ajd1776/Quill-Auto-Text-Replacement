@@ -595,6 +595,34 @@ final class AppState {
         }
     }
 
+    /// From the menu bar panel: hands focus back to the app you were typing in, waits until it's
+    /// really in front, then pastes the quill at its cursor.
+    func paste(_ snippet: Snippet) {
+        guard status != .needsAccess else {
+            requestAccess()
+            openAccessibilitySettings()
+            return
+        }
+        guard let app = lastExternalApp, !app.isTerminated else { return }
+        if #available(macOS 14.0, *) { NSApp.yieldActivation(to: app) }
+        app.activate()
+        waitForFront(app, tries: 20) { [engine] in
+            engine.insert(snippet, pasting: true)
+        }
+    }
+
+    /// Runs `then` once `app` is frontmost (checking every 50 ms, giving up after `tries`),
+    /// plus a moment for its text field to take focus again.
+    private func waitForFront(_ app: NSRunningApplication, tries: Int, then: @escaping @MainActor () -> Void) {
+        if NSWorkspace.shared.frontmostApplication?.processIdentifier == app.processIdentifier || tries <= 0 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { MainActor.assumeIsolated { then() } }
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) {
+            MainActor.assumeIsolated { self.waitForFront(app, tries: tries - 1, then: then) }
+        }
+    }
+
     func setSearchPanelOpen(_ isOpen: Bool) {
         engine.isSuspended = isOpen
     }

@@ -160,11 +160,17 @@ final class ExpansionEngine {
     }
 
     /// Inserts a snippet at the cursor without typing its shortcut, for the search panel and menu bar.
-    func insert(_ snippet: Snippet) {
+    /// Puts the quill's text where the cursor is. `pasting` uses the clipboard (put back afterwards)
+    /// instead of typing it, as the menu bar panel does: instant and the same in every app.
+    func insert(_ snippet: Snippet, pasting: Bool = false) {
         emitter.finishTyping()
         reset()
+        isPasting = pasting
         expand(snippet, deleting: 0, replay: nil, typed: "", allowsUndo: true)
     }
+
+    /// The current insert pastes instead of typing.
+    private var isPasting = false
 
     // MARK: Event handling
 
@@ -381,7 +387,12 @@ final class ExpansionEngine {
         // With {cursor}, the cursor lands inside the text, so the delimiter isn't typed after it.
         let replay = movesCursor ? nil : replay
 
-        if style == .typewriter {
+        let pastes = isPasting
+        isPasting = false
+        if pastes {
+            emitter.insert(rendered.text, pasting: true)
+            emitter.moveLeft(rendered.cursorBack ?? 0)
+        } else if style == .typewriter {
             emitter.typewrite(rendered.text, charactersPerSecond: typewriterSpeed,
                               thenReplay: replay, thenMoveLeft: rendered.cursorBack ?? 0)
         } else {

@@ -136,24 +136,39 @@ struct MenuBarPanel: View {
                 .renderingMode(.template)
                 .foregroundStyle(.white)
                 .frame(width: 30, height: 30)
-                .background(statusColor, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .background(statusColor, in: RoundedRectangle(cornerRadius: 30 * 0.28, style: .continuous))
 
             VStack(alignment: .leading, spacing: 1) {
                 Text("Quill").font(.headline)
-                Text(statusTitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
+                HStack(spacing: 5) {
+                    Circle()
+                        .fill(state.status == .on ? Color.green : state.status == .needsAccess || state.status == .off ? Color.red : Color.orange)
+                        .frame(width: 7, height: 7)
+                        .accessibilityHidden(true)
+                    Text(statusTitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
             }
 
             Spacer()
 
             if state.status == .needsAccess {
-                Button("Allow Access") {
+                Button {
                     state.requestAccess()
                     state.openAccessibilitySettings()
+                } label: {
+                    Text("Allow Access")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(Color.black.opacity(0.85))
+                        .padding(.horizontal, 12)
+                        .frame(height: 26)
+                        .background(Color.orange, in: Capsule())
+                        .contentShape(Capsule())
                 }
-                .controlSize(.small)
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
             } else {
                 Menu {
                     if state.isPaused {
@@ -242,19 +257,20 @@ struct MenuBarPanel: View {
             .fixedSize()
             .help("Sort")
         }
-        .padding(.horizontal, 9)
-        .padding(.vertical, 6)
-        .background(.quaternary.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, 12)
+        .frame(height: 32)
+        .background(Surface.card, in: Capsule())
+        .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
     }
 
     private var chips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 6) {
-                Chip(title: "All", color: .accentColor, isSelected: filter == .all) { filter = .all }
-                Chip(title: "On", color: .green, isSelected: filter == .on) { filter = .on }
-                Chip(title: "Off", color: .gray, isSelected: filter == .off) { filter = .off }
+                Chip(title: "All", symbol: "square.grid.2x2.fill", color: .accentColor, isSelected: filter == .all) { filter = .all }
+                Chip(title: "On", symbol: "circle.fill", color: .green, isSelected: filter == .on) { filter = .on }
+                Chip(title: "Off", symbol: "circle.fill", color: .red, isSelected: filter == .off) { filter = .off }
                 ForEach(store.groups) { group in
-                    Chip(title: group.name, color: group.tint, isSelected: filter == .group(group.id)) {
+                    Chip(title: group.name, symbol: group.symbol, color: group.tint, isSelected: filter == .group(group.id)) {
                         filter = .group(group.id)
                     }
                 }
@@ -311,11 +327,11 @@ struct MenuBarPanel: View {
         state.page = page
     }
 
-    /// Closes the panel, hands focus back to the app you were typing in, then types the snippet.
+    /// Closes the panel, then pastes the quill where the cursor is in the app you were using.
     private func insert(_ snippet: Snippet) {
         closePanel()
-        state.lastExternalApp?.activate()
-        state.insert(snippet, after: 0.3)
+        state.setSearchPanelOpen(false)
+        state.paste(snippet)
     }
 
     private func closePanel() {
@@ -359,40 +375,53 @@ private struct PanelRow: View {
             }
             .buttonStyle(.plain)
             .opacity(state.store.isActive(snippet) ? 1 : 0.5)
-            .help("Insert \u{201C}\(snippet.trigger)\u{201D}")
+            .help("Paste \u{201C}\(snippet.trigger)\u{201D} where your cursor is")
 
-            Toggle("Turn \(snippet.trigger) on or off", isOn: state.store.enabledBinding(for: snippet.id))
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .labelsHidden()
+            RowSwitch(title: "Turn \(snippet.trigger) on or off", isOn: state.store.enabledBinding(for: snippet.id))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 5)
-        .background(isHovering ? Color.primary.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+        .background(isHovering ? Color.primary.opacity(0.07) : .clear, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         .onHover { isHovering = $0 }
     }
 }
 
+/// A filter, in the same tinted pill as the quill page's options: the group's own colour on a
+/// faint wash, stronger with an outline when chosen.
 private struct Chip: View {
     let title: String
+    let symbol: String?
     let color: Color
     let isSelected: Bool
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(.caption.weight(.medium))
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .foregroundStyle(isSelected ? .white : .primary)
-                .background(isSelected ? AnyShapeStyle(color) : AnyShapeStyle(.quaternary.opacity(0.6)), in: Capsule())
-                .contentShape(Capsule())
+            HStack(spacing: 5) {
+                if let symbol {
+                    if IconKind.isEmoji(symbol) {
+                        Text(symbol).font(.system(size: 11))
+                    } else {
+                        Image(systemName: symbol)
+                            .font(.system(size: symbol == "circle.fill" ? 7 : 10, weight: .semibold))
+                            .frame(width: 12, height: 12)
+                    }
+                }
+                Text(title)
+                    .font(.system(size: 12, weight: .semibold))
+                    .lineLimit(1)
+            }
+            .foregroundStyle(color)
+            .padding(.horizontal, 10)
+            .frame(height: 26)
+            .background(color.opacity(isSelected ? 0.28 : 0.12), in: Capsule())
+            .overlay(Capsule().strokeBorder(color.opacity(isSelected ? 0.9 : 0.22), lineWidth: isSelected ? 1.5 : 0.5))
+            .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .focusEffectDisabled()
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
+        .accessibilityLabel(title)
+        .accessibilityAddTraits(isSelected ? [.isSelected, .isButton] : .isButton)
     }
 }
 
