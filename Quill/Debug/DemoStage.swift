@@ -112,7 +112,7 @@ final class DemoStage {
         panel.orderFrontRegardless()
         extraWindow = panel
 
-        Task {
+        _ = Task {
             try await pause(0.5)
             let size = panel.frame.size
             panel.setFrameOrigin(CGPoint(x: area.midX - size.width / 2, y: area.midY - size.height / 2 + 10))
@@ -139,7 +139,7 @@ final class DemoStage {
         state.selection = []
         state.selection = []
         openLibrary()
-        Task {
+        _ = Task {
             try await pause(1.6)
             guard let window = NSApp.windows.first(where: { $0.identifier?.rawValue.contains(WindowID.library) == true }) else { return }
             let screen = NSScreen.main?.frame ?? .zero
@@ -214,7 +214,7 @@ final class DemoStage {
         self.window = window
         self.textView = textView
         report(frame)
-        Task {
+        _ = Task {
             try await pause(0.5)
             try await script()
             print("QUILL-DEMO-DONE"); fflush(stdout)

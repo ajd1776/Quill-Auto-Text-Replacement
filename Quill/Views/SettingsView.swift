@@ -620,6 +620,6 @@ struct AboutSettingsPane: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .formStyle(.grouped)
+        .settingsPaneStyle()
     }
 }

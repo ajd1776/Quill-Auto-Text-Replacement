@@ -99,8 +99,22 @@ private struct MenuBarLabel: View {
             case "editor":
                 openWindow(id: WindowID.library)
                 let snippets = state.store.snippets.sorted(by: state.sortOrder.areInIncreasingOrder)
-                if let pick = snippets.first(where: { $0.trigger == "thx" || $0.trigger == "eAD" }) ?? snippets.first {
+                let wanted = arguments.contains("-QuillDemoSidebarFocus") ? "eml" : "thx"
+                if let pick = snippets.first(where: { $0.trigger == wanted || $0.trigger == "eAD" }) ?? snippets.first {
                     state.selection = [.snippet(pick.id)]
+                }
+                if arguments.contains("-QuillDemoSidebarFocus") {
+                    // Puts keyboard focus in the sidebar, so the selection shows in its emphasised colour.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        func outline(in view: NSView) -> NSView? {
+                            if view is NSOutlineView || view is NSTableView { return view }
+                            return view.subviews.lazy.compactMap(outline(in:)).first
+                        }
+                        if let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 600 }),
+                           let content = window.contentView, let list = outline(in: content) {
+                            window.makeFirstResponder(list)
+                        }
+                    }
                 }
             case "editquill":
                 openWindow(id: WindowID.library)

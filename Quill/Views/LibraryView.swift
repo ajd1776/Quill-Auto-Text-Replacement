@@ -229,6 +229,7 @@ struct LibraryView: View {
             delete(state.selectedSnippetIDs)
         }
         .toolbar {
+            // Grouped like macOS 27 toolbars: making things, then starter packs, each its own capsule.
             ToolbarItemGroup {
                 Button("New Quill", systemImage: "plus.circle") {
                     searchText = ""
@@ -240,15 +241,6 @@ struct LibraryView: View {
                     state.newGroup()
                 }
                 .help("New Group (⇧⌘N)")
-
-                ToolbarDivider()
-
-                Button("Add Starter Pack", systemImage: "shippingbox") {
-                    state.isShowingPacks = true
-                }
-                .help("Add a Starter Pack")
-
-                ToolbarDivider()
 
                 Menu {
                     Button("New Quill", systemImage: "plus.circle") {
@@ -269,6 +261,17 @@ struct LibraryView: View {
                 .menuIndicator(.hidden)
                 .fixedSize()
                 .help("More Ways to Add Quills")
+            }
+
+            if #available(macOS 26.0, *) {
+                ToolbarSpacer(.fixed)
+            }
+
+            ToolbarItem {
+                Button("Add Starter Pack", systemImage: "shippingbox") {
+                    state.isShowingPacks = true
+                }
+                .help("Add a Starter Pack")
             }
         }
     }
@@ -531,17 +534,6 @@ struct TabLabel: View {
     }
 }
 
-/// A thin vertical line between groups of toolbar buttons.
-private struct ToolbarDivider: View {
-    var body: some View {
-        Rectangle()
-            .fill(.separator)
-            .frame(width: 1, height: 16)
-            .padding(.horizontal, 4)
-            .accessibilityHidden(true)
-    }
-}
-
 private struct GroupHeader: View {
     let group: SnippetGroup
     let count: Int
@@ -719,10 +711,7 @@ private struct SnippetRow: View {
 
             Spacer(minLength: 4)
 
-            Toggle("Turn \(snippet.trigger) on or off", isOn: $isEnabled)
-                .toggleStyle(.switch)
-                .controlSize(.mini)
-                .labelsHidden()
+            RowSwitch(title: "Turn \(snippet.trigger) on or off", isOn: $isEnabled)
                 .help(snippet.isEnabled ? "Turn Off" : "Turn On")
         }
         .padding(.vertical, 4)
@@ -730,13 +719,49 @@ private struct SnippetRow: View {
 }
 
 /// A snippet's icon in a small rounded square, tinted with its group's colour.
+/// A quill's on/off switch in the sidebar. On a selected (blue) row the blue track would vanish,
+/// so it gets a white outline there. Its own view, so it sees the row's selection.
+private struct RowSwitch: View {
+    let title: String
+    @Binding var isOn: Bool
+    @Environment(\.backgroundProminence) private var prominence
+
+    var body: some View {
+        Toggle(title, isOn: $isOn)
+            .toggleStyle(.switch)
+            .controlSize(.mini)
+            .labelsHidden()
+            .padding(3)
+            .overlay {
+                if prominence == .increased {
+                    Capsule()
+                        .strokeBorder(Color(.sRGB, white: 1, opacity: 0.9), lineWidth: 1.5)
+                        .allowsHitTesting(false)
+                }
+            }
+    }
+}
+
 struct SnippetIcon: View {
     let symbol: String?
     let color: Color?
     var size: CGFloat = 24
+    @Environment(\.self) private var environment
+    @Environment(\.backgroundProminence) private var prominence
+
+    /// On a selected (blue) sidebar row the tile turns white with the symbol in its colour,
+    /// so a blue tile can't disappear into the selection.
+    private var isOnSelection: Bool { prominence == .increased }
+
+    /// Resolved as on a plain background, so a selected sidebar row can't swap in its lighter,
+    /// washed-out variant of the colour behind the white symbol.
+    private var fill: Color {
+        var plain = environment
+        plain.backgroundProminence = .standard
+        return Color((color ?? .accentColor).resolve(in: plain))
+    }
 
     var body: some View {
-        let fill = color ?? .accentColor
         Group {
             if let symbol, IconKind.isEmoji(symbol) {
                 Text(symbol)
@@ -744,14 +769,15 @@ struct SnippetIcon: View {
             } else {
                 Image(systemName: symbol ?? "text.quote")
                     .font(.system(size: size * 0.46, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(isOnSelection ? fill : Color(.sRGB, white: 1, opacity: 1))
             }
         }
             .frame(width: size, height: size)
             .background {
                 RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
-                    .fill(fill)
+                    .fill(isOnSelection ? Color(.sRGB, white: 1, opacity: 1) : fill)
             }
+            .environment(\.backgroundProminence, .standard)
             .accessibilityHidden(true)
     }
 }
@@ -762,9 +788,7 @@ private struct SidebarSummary: View {
     @Binding var sortOrder: SnippetSortOrder
 
     var body: some View {
-        VStack(spacing: 0) {
-            Divider()
-            HStack(spacing: 10) {
+        HStack(spacing: 10) {
                 Menu {
                     Picker("Sort By", selection: $sortOrder) {
                         ForEach(SnippetSortOrder.allCases) { order in
@@ -789,8 +813,13 @@ private struct SidebarSummary: View {
             .monospacedDigit()
             .foregroundStyle(.secondary)
             .padding(.horizontal, 14)
-            .padding(.vertical, 8)
-        }
+            .frame(height: 34)
+            // A floating capsule like the tab bar, opaque so the list never shows through the text.
+            .background(Surface.bar, in: Capsule())
+            .overlay(Capsule().strokeBorder(.separator, lineWidth: 0.5))
+            .padding(.horizontal, 10)
+            .padding(.bottom, 10)
+            .padding(.top, 4)
     }
 }
 
@@ -814,20 +843,30 @@ private struct AccessCallout: View {
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
                     .frame(maxWidth: .infinity, alignment: .leading)
-                Button("Allow Access…") {
+                Button {
                     state.requestAccess()
                     state.openAccessibilitySettings()
+                } label: {
+                    // Dark text on orange: white on orange is too faint to read, and a prominent
+                    // button would turn grey whenever the window isn't in front.
+                    Text("Allow Access…")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(Color.black.opacity(0.85))
+                        .padding(.horizontal, 12)
+                        .frame(height: 26)
+                        .background(Color.orange, in: Capsule())
+                        .contentShape(Capsule())
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(.orange)
+                .buttonStyle(.plain)
+                .focusEffectDisabled()
                 .padding(.top, 2)
             }
             Spacer(minLength: 0)
         }
-        .padding(12)
-        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(14)
+        .background(Color.orange.opacity(0.12), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .strokeBorder(Color.orange.opacity(0.35), lineWidth: 1)
         }
         .padding(.vertical, 6)
