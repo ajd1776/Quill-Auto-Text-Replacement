@@ -35,8 +35,10 @@ The most useful first:
 - **Suggestion bubble.** Matching quills appear above your text as you type. Space accepts an exact match, Tab the highlighted one, ↑ ↓ choose, Esc dismisses.
 - **Tokens and fill-in fields.** `{date}`, `{date:FORMAT}`, `{time}`, `{clipboard}` and `{cursor}`, plus `{input:Name}`, which asks for a value in a small form before the text goes in.
 - **On and off in place.** Every quill and group has its own switch in the sidebar, and Quill itself turns off or pauses from the menu bar (<kbd>⇧</kbd> <kbd>⌘</kbd> <kbd>P</kbd>).
-- **Menu bar panel.** Search your quills, filter by group, switch them on and off, or click one to type it where you were typing. A tab bar along the bottom jumps to any page, or quits Quill.
+- **Menu bar panel.** Search your quills, filter with pills in each group's colour, switch them on and off, or click one to paste it straight where your cursor is (your clipboard is put back). A tab bar along the bottom jumps to any page, or quits Quill.
 - **Firing Range.** A practice page where your quills fire for real, with a clickable cheat sheet, a hit counter and an effect to try. Practice never counts towards your stats.
+- **Opens ready to write.** With no quill selected, the main panel is a blank quill: type a shortcut and its text, then Create Quill. Nothing is saved until you do.
+- **Options as coloured pills.** Under each quill, its group, when it expands, its effect, the apps it works in and capitals sit in one row of labelled pills. The group pill takes the group's colour and icon.
 - **One Edit sheet.** Shortcut, text, notes, group, colour and icon for any quill in one place: right-click › Edit…, double-click, or New. Search hundreds of SF Symbols or pick any emoji, with the system colours and your own saved colours.
 - **Notes on every quill.** Jot down what a quill is for under its title; searches match notes too.
 - **Collapsible groups.** Each with its own icon, colour and on/off switch.
@@ -44,8 +46,8 @@ The most useful first:
 - **Bring your quills.** Import your macOS Text Replacements, or add a starter pack: emoji shortcodes (`:fire:` → 🔥), typo fixes (`teh` → `the`) and date formats (`;dmy` → `18/11/2026`).
 - **Fine control.** Limit a quill to certain apps, pause Quill in an app, match capitals (`EML` → ALL CAPS), drop the space after an expansion (the default) or keep it, and press Delete straight after one to undo it.
 - **Stats and History.** Keys and time saved, your streak, busiest hours, top apps and quills, a Tidy Up list, and a searchable log of recent expansions.
-- **13 effects, combinable.** Pop Badge, Typewriter, Highlight, Ink Underline, Confetti, Sparkle, Cyber and more, drawn over the text and respecting Reduce Motion. Choose several and they play together.
-- **One window.** Your quills stay in the sidebar, and a floating tab bar switches the right-hand side between the editor, Stats, History, the Firing Range and Settings, with New and Quit.
+- **13 effects, combinable.** Pop Badge, Typewriter, Highlight, Ink Underline, Confetti, Sparkle, Cyber and more, drawn over the text and respecting Reduce Motion. Choose one per quill from a gallery where every effect plays a live preview on that quill's own text, or several in Settings to play together.
+- **One window.** Your quills stay in the sidebar, and a floating glass tab bar switches the right-hand side between the editor, Stats, History, the Firing Range and Settings, with New and Quit.
 - **Keyboard first.** <kbd>⌘</kbd> <kbd>K</kbd> command palette, a global search hotkey, `quill://` links to any page, and Shortcuts app actions (Insert Quill, Get Quill Text, Add Quill, Turn Quill On/Off).
 - **Private and local.** One JSON file on your Mac with daily backups and JSON import and export. Password fields are never seen. The only network request is a daily update check against GitHub Releases.
 
@@ -65,7 +67,7 @@ The most useful first:
 
 | Quills and editor | Edit sheet |
 | --- | --- |
-| ![The sidebar with collapsible groups and on/off switches, and the editor open for thx](docs/screenshots/snippets.png) | ![The Edit sheet: shortcut, group, text, notes, colours and a searchable icon browser](docs/screenshots/appearance.png) |
+| ![The sidebar with collapsible groups and on/off switches, and the editor open for thx with its coloured option pills](docs/screenshots/snippets.png) | ![The Edit sheet: shortcut, group, text, notes, colours and a searchable icon browser](docs/screenshots/appearance.png) |
 
 | Stats | Firing Range |
 | --- | --- |
